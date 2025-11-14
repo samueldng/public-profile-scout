@@ -14,7 +14,83 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      payments: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          job_id: string | null
+          status: string
+          stripe_payment_id: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          id?: string
+          job_id?: string | null
+          status: string
+          stripe_payment_id?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          job_id?: string | null
+          status?: string
+          stripe_payment_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "search_jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      search_jobs: {
+        Row: {
+          city: string | null
+          completed_at: string | null
+          created_at: string
+          error_message: string | null
+          id: string
+          plan: Database["public"]["Enums"]["search_plan"]
+          query: string
+          result_data: Json | null
+          status: Database["public"]["Enums"]["job_status"]
+          updated_at: string
+          username: string | null
+        }
+        Insert: {
+          city?: string | null
+          completed_at?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          plan: Database["public"]["Enums"]["search_plan"]
+          query: string
+          result_data?: Json | null
+          status?: Database["public"]["Enums"]["job_status"]
+          updated_at?: string
+          username?: string | null
+        }
+        Update: {
+          city?: string | null
+          completed_at?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          plan?: Database["public"]["Enums"]["search_plan"]
+          query?: string
+          result_data?: Json | null
+          status?: Database["public"]["Enums"]["job_status"]
+          updated_at?: string
+          username?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +99,8 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      job_status: "pending" | "processing" | "completed" | "failed"
+      search_plan: "basic" | "complete"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +227,9 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      job_status: ["pending", "processing", "completed", "failed"],
+      search_plan: ["basic", "complete"],
+    },
   },
 } as const
