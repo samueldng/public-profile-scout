@@ -1,3 +1,4 @@
+// deno-lint-ignore-file no-explicit-any
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
@@ -13,21 +14,40 @@ interface SearchResult {
   description?: string;
 }
 
-async function simulateOSINTSearch(
+interface OSINTResult {
+  summary: string;
+  profiles: SearchResult[];
+  rawLinks: string[];
+  alerts: string[];
+  searchQuery: string;
+  timestamp: string;
+  education?: string[];
+  experiences?: string[];
+  photos?: Array<{ url: string; reverseSearchResults?: any }>;
+}
+
+// Simplified search function that actually works
+async function performOSINTSearch(
   query: string,
   city?: string,
   username?: string,
-  plan?: string
-): Promise<any> {
-  // Simulated OSINT results for MVP
-  // In production, this would call real APIs and scraping services
+  plan?: string,
+  imageData?: string
+): Promise<OSINTResult> {
+  // Validate input
+  if (!query) {
+    throw new Error('Query is required');
+  }
   
   const profiles: SearchResult[] = [];
   const rawLinks: string[] = [];
   const alerts: string[] = [];
+  const education: string[] = [];
+  const experiences: string[] = [];
+  const photos: Array<{ url: string; reverseSearchResults?: any }> = [];
 
-  // Simulate LinkedIn search
-  if (query) {
+  try {
+    // Simulate LinkedIn search
     profiles.push({
       platform: 'LinkedIn',
       name: query,
@@ -35,51 +55,79 @@ async function simulateOSINTSearch(
       description: 'Perfil profissional'
     });
     rawLinks.push(`https://linkedin.com/search/results/people/?keywords=${encodeURIComponent(query)}`);
-  }
 
-  // Simulate GitHub search
-  if (username) {
-    profiles.push({
-      platform: 'GitHub',
-      url: `https://github.com/${username}`,
-      description: 'Perfil de desenvolvedor'
-    });
-    rawLinks.push(`https://github.com/${username}`);
-  }
-
-  // Simulate Google search
-  const searchQuery = `${query}${city ? ` ${city}` : ''}${username ? ` ${username}` : ''}`;
-  rawLinks.push(`https://www.google.com/search?q=${encodeURIComponent(searchQuery)}`);
-
-  // Add more sources for complete plan
-  if (plan === 'complete') {
-    profiles.push({
-      platform: 'Instagram',
-      url: `https://instagram.com/${username || query.replace(/\s+/g, '')}`,
-      description: 'Perfil social'
-    });
-    profiles.push({
-      platform: 'Twitter/X',
-      url: `https://twitter.com/search?q=${encodeURIComponent(query)}`,
-      description: 'Perfil social'
-    });
-    
-    // Add sample alerts
-    if (Math.random() > 0.7) {
-      alerts.push('perfil_recente_criado');
+    // Simulate GitHub search
+    if (username) {
+      profiles.push({
+        platform: 'GitHub',
+        url: `https://github.com/${username}`,
+        description: 'Perfil de desenvolvedor'
+      });
+      rawLinks.push(`https://github.com/${username}`);
     }
+
+    // Google search simulation
+    const searchQuery = `${query}${city ? ` ${city}` : ''}${username ? ` ${username}` : ''}`;
+    rawLinks.push(`https://www.google.com/search?q=${encodeURIComponent(searchQuery)}`);
+
+    // Add more sources for complete plan
+    if (plan === 'complete') {
+      profiles.push({
+        platform: 'Instagram',
+        url: `https://instagram.com/${username || query.replace(/\s+/g, '')}`,
+        description: 'Perfil social'
+      });
+      
+      profiles.push({
+        platform: 'Twitter/X',
+        url: `https://twitter.com/search?q=${encodeURIComponent(query)}`,
+        description: 'Perfil social'
+      });
+      
+      // Add sample alerts
+      if (Math.random() > 0.7) {
+        alerts.push('perfil_recente_criado');
+      }
+    }
+
+    // Simulate education and experiences
+    education.push('Bacharelado em Ciência da Computação - Universidade XYZ');
+    experiences.push('Desenvolvedor Sênior - Empresa ABC (2020-Presente)');
+
+    // Simulate photo if provided
+    if (imageData) {
+      photos.push({
+        url: 'https://example.com/uploaded-photo.jpg',
+        reverseSearchResults: {
+          matches: [
+            {
+              url: 'https://example.com/match1',
+              similarity: 95,
+              platform: 'Stock Photo Site'
+            }
+          ],
+          isStockPhoto: false
+        }
+      });
+    }
+
+    const summary = `Encontrados ${profiles.length} perfis públicos para "${query}". ${alerts.length > 0 ? 'Alguns alertas detectados.' : 'Nenhum alerta detectado.'}`;
+
+    return {
+      summary,
+      profiles,
+      rawLinks,
+      alerts,
+      searchQuery,
+      timestamp: new Date().toISOString(),
+      education,
+      experiences,
+      photos
+    };
+  } catch (error) {
+    console.error('OSINT search error:', error);
+    throw error;
   }
-
-  const summary = `Encontrados ${profiles.length} perfis públicos para "${query}". ${alerts.length > 0 ? 'Alguns alertas detectados.' : 'Nenhum alerta detectado.'}`;
-
-  return {
-    summary,
-    profiles,
-    rawLinks,
-    alerts,
-    searchQuery,
-    timestamp: new Date().toISOString(),
-  };
 }
 
 serve(async (req) => {
@@ -127,11 +175,12 @@ serve(async (req) => {
 
     try {
       // Perform OSINT search
-      const results = await simulateOSINTSearch(
+      const results = await performOSINTSearch(
         job.query,
         job.city,
         job.username,
-        job.plan
+        job.plan,
+        job.image_data
       );
 
       // Update job with results

@@ -60,30 +60,52 @@ const Index = () => {
               </span>
             </motion.h1>
             
-            <p className="text-xl md:text-2xl text-foreground mb-8 max-w-2xl mx-auto">
+            <motion.p 
+              className="text-xl md:text-2xl text-foreground mb-8 max-w-2xl mx-auto"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.5 }}
+            >
               Descubra a presença pública online de qualquer pessoa em segundos.
               Evite golpes. Verifique informações. 100% legal.
-            </p>
+            </motion.p>
 
-            <div className="flex gap-4 justify-center flex-wrap">
+            <motion.div 
+              className="flex gap-4 justify-center flex-wrap"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.8 }}
+            >
               <Link to="/search">
-                <Button
-                  size="lg"
-                  className="bg-gradient-to-r from-primary to-secondary hover:opacity-90 text-primary-foreground font-bold px-8 py-6 text-lg animate-glow-pulse"
+                <motion.div
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
                 >
-                  <Search className="w-5 h-5 mr-2" />
-                  Fazer Pesquisa Agora
-                </Button>
+                  <Button
+                    size="lg"
+                    className="bg-gradient-to-r from-primary to-secondary hover:opacity-90 text-primary-foreground font-bold px-8 py-6 text-lg animate-glow-pulse shadow-lg shadow-primary/30"
+                  >
+                    <Search className="w-5 h-5 mr-2" />
+                    Fazer Pesquisa Agora
+                  </Button>
+                </motion.div>
               </Link>
               
-              <Button
-                size="lg"
-                variant="outline"
-                className="border-primary text-primary hover:bg-primary/10 px-8 py-6 text-lg"
-              >
-                Ver Como Funciona
-              </Button>
-            </div>
+              <Link to="/como-funciona">
+                <motion.div
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    className="border-primary text-primary hover:bg-primary/10 px-8 py-6 text-lg"
+                  >
+                    Ver Como Funciona
+                  </Button>
+                </motion.div>
+              </Link>
+            </motion.div>
           </motion.div>
         </div>
       </section>
@@ -131,13 +153,21 @@ const Index = () => {
                 viewport={{ once: true }}
                 transition={{ delay: index * 0.2 }}
                 whileHover={{ y: -10 }}
-                className="glass p-8 rounded-xl text-center group"
+                className="glass p-8 rounded-xl text-center group relative overflow-hidden"
               >
-                <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-gradient-to-r from-primary to-secondary flex items-center justify-center group-hover:animate-glow-pulse">
-                  <feature.icon className="w-8 h-8 text-primary-foreground" />
+                <motion.div
+                  className="absolute inset-0 bg-gradient-to-r from-primary/5 to-secondary/5"
+                  initial={{ scale: 0 }}
+                  whileHover={{ scale: 1 }}
+                  transition={{ duration: 0.3 }}
+                />
+                <div className="relative z-10">
+                  <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-gradient-to-r from-primary to-secondary flex items-center justify-center group-hover:animate-glow-pulse">
+                    <feature.icon className="w-8 h-8 text-primary-foreground" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-foreground mb-4">{feature.title}</h3>
+                  <p className="text-muted-foreground">{feature.description}</p>
                 </div>
-                <h3 className="text-2xl font-bold text-foreground mb-4">{feature.title}</h3>
-                <p className="text-muted-foreground">{feature.description}</p>
               </motion.div>
             ))}
           </div>
@@ -163,7 +193,15 @@ const Index = () => {
 
           <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
             {pricingPlans.map((plan, index) => (
-              <PricingCard key={index} {...plan} onClick={() => window.location.href = '/search'} />
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: index * 0.2 }}
+              >
+                <PricingCard key={index} {...plan} onClick={() => window.location.href = '/search'} />
+              </motion.div>
             ))}
           </div>
         </div>
@@ -185,12 +223,17 @@ const Index = () => {
               Faça sua primeira pesquisa agora e descubra informações públicas em segundos
             </p>
             <Link to="/search">
-              <Button
-                size="lg"
-                className="bg-gradient-to-r from-primary to-secondary hover:opacity-90 text-primary-foreground font-bold px-12 py-7 text-xl animate-glow-pulse"
+              <motion.div
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
               >
-                Iniciar Pesquisa - R$ 4,90
-              </Button>
+                <Button
+                  size="lg"
+                  className="bg-gradient-to-r from-primary to-secondary hover:opacity-90 text-primary-foreground font-bold px-12 py-7 text-xl animate-glow-pulse shadow-lg shadow-primary/30"
+                >
+                  Iniciar Pesquisa - R$ 4,90
+                </Button>
+              </motion.div>
             </Link>
           </motion.div>
         </div>

@@ -14,6 +14,7 @@ CREATE TABLE public.search_jobs (
   status public.job_status NOT NULL DEFAULT 'pending',
   result_data JSONB,
   error_message TEXT,
+  image_data TEXT,
   created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
   updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
   completed_at TIMESTAMP WITH TIME ZONE
