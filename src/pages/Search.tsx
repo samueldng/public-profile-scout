@@ -1,8 +1,12 @@
 import { motion } from 'framer-motion';
 import { SearchForm } from '@/components/SearchForm';
 import { Shield, Lock, Eye } from 'lucide-react';
+import { useState } from 'react';
+import { Button } from '@/components/ui/button';
 
 const Search = () => {
+  const [selectedPlan, setSelectedPlan] = useState<'basic' | 'complete'>('basic');
+
   return (
     <div className="min-h-screen bg-background cyber-grid">
       <div className="container mx-auto px-4 py-16">
@@ -17,6 +21,45 @@ const Search = () => {
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
             Pesquise informações públicas de forma rápida, ética e legal
           </p>
+        </motion.div>
+
+        {/* Plan Selection */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="max-w-2xl mx-auto mb-8"
+        >
+          <h2 className="text-2xl font-bold text-foreground mb-4 text-center">
+            Escolha seu Plano
+          </h2>
+          <div className="grid grid-cols-2 gap-4">
+            <Button
+              variant={selectedPlan === 'basic' ? 'default' : 'outline'}
+              className={`h-auto py-6 flex flex-col items-start ${
+                selectedPlan === 'basic'
+                  ? 'bg-gradient-to-r from-primary to-secondary text-primary-foreground'
+                  : 'border-border text-foreground'
+              }`}
+              onClick={() => setSelectedPlan('basic')}
+            >
+              <span className="text-lg font-bold">Pesquisa Básica</span>
+              <span className="text-2xl font-bold mt-2">R$ 4,90</span>
+              <span className="text-sm mt-1 opacity-80">Redes sociais + busca</span>
+            </Button>
+            <Button
+              variant={selectedPlan === 'complete' ? 'default' : 'outline'}
+              className={`h-auto py-6 flex flex-col items-start ${
+                selectedPlan === 'complete'
+                  ? 'bg-gradient-to-r from-primary to-secondary text-primary-foreground'
+                  : 'border-border text-foreground'
+              }`}
+              onClick={() => setSelectedPlan('complete')}
+            >
+              <span className="text-lg font-bold">Pesquisa Completa</span>
+              <span className="text-2xl font-bold mt-2">R$ 14,90</span>
+              <span className="text-sm mt-1 opacity-80">Busca reversa + alertas</span>
+            </Button>
+          </div>
         </motion.div>
 
         <div className="grid md:grid-cols-3 gap-6 mb-12">
@@ -51,7 +94,7 @@ const Search = () => {
           ))}
         </div>
 
-        <SearchForm />
+        <SearchForm selectedPlan={selectedPlan} />
       </div>
     </div>
   );

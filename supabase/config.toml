@@ -1,1 +1,10 @@
 project_id = "hoizmjrboacdtlztzkvv"
+
+[functions.create-search-job]
+verify_jwt = false
+
+[functions.process-search-job]
+verify_jwt = false
+
+[functions.get-search-job]
+verify_jwt = false
