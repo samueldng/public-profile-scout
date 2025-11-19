@@ -132,6 +132,49 @@ async function performOSINTSearch(
           rawLinks.push(twitterUrl);
         }
       }
+      
+      // Adicionando novas buscas conforme solicitado
+      if (plan === 'complete') {
+        // Twitter/X (nova versão)
+        const newXUrl = `https://x.com/search?q=${encodeURIComponent(query)}&lang=pt`;
+        allProfiles.push({
+          platform: 'X/Twitter',
+          url: newXUrl,
+          description: 'Busca em perfis do Twitter/X',
+          relevanceScore: 75
+        });
+        rawLinks.push(newXUrl);
+
+        // Lattes
+        const lattesUrl = `https://lattes.cnpq.br/`;
+        allProfiles.push({
+          platform: 'Lattes',
+          url: lattesUrl,
+          description: 'Currículo Lattes - Plataforma brasileira de currículos',
+          relevanceScore: 80
+        });
+        rawLinks.push(lattesUrl);
+
+        // Serasa
+        const serasaUrl = `https://empresas.serasaexperian.com.br/busca-empresa/${encodeURIComponent(query)}`;
+        allProfiles.push({
+          platform: 'Serasa',
+          url: serasaUrl,
+          description: 'Consulta empresarial no Serasa Experian',
+          relevanceScore: 65
+        });
+        rawLinks.push(serasaUrl);
+
+        // JusBrasil
+        const jusBrasilUrl = `https://www.jusbrasil.com.br/busca?q=${encodeURIComponent(query)}`;
+        allProfiles.push({
+          platform: 'JusBrasil',
+          url: jusBrasilUrl,
+          description: 'Busca em documentos jurídicos e processos',
+          relevanceScore: 70
+        });
+        rawLinks.push(jusBrasilUrl);
+      }
     }
 
     // Use Lovable AI to analyze and consolidate results
@@ -200,7 +243,7 @@ IMPORTANTE: Se não houver informações suficientes, use placeholders realistas
     let analysisResult;
     try {
       // Extract JSON from markdown code blocks if present
-      const jsonMatch = aiContent.match(/```json\n([\s\S]*?)\n```/) || aiContent.match(/```\n([\s\S]*?)\n```/);
+      const jsonMatch = aiContent.match(/```json\s*([\s\S]*?)\s*```/) || aiContent.match(/```\s*([\s\S]*?)\s*```/);
       const jsonStr = jsonMatch ? jsonMatch[1] : aiContent;
       analysisResult = JSON.parse(jsonStr);
     } catch (parseError) {
