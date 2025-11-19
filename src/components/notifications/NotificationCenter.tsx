@@ -115,6 +115,25 @@ export const NotificationCenter = () => {
 
     fetchRecentSearches();
 
+    // Show an immediate notification to establish presence
+    const immediateNotification = generateUserActivityNotification();
+    setFloatingNotifications(prev => [immediateNotification, ...prev.slice(0, 2)]);
+    
+    setTimeout(() => {
+      setFloatingNotifications(prev => prev.filter(n => n.id !== immediateNotification.id));
+    }, 5000);
+
+    // Immediately show initial notifications to establish presence
+    const initialNotificationsTimer = setTimeout(() => {
+      // Show initial notification 3 seconds after page load as per requirements
+      const notification1 = generateUserActivityNotification();
+      setFloatingNotifications(prev => [notification1, ...prev.slice(0, 2)]);
+      
+      setTimeout(() => {
+        setFloatingNotifications(prev => prev.filter(n => n.id !== notification1.id));
+      }, 5000);
+    }, 3000); // Show initial notification 3 seconds after page load
+
     // Subscribe to real-time updates
     const channel = supabase
       .channel('notifications')
@@ -187,17 +206,6 @@ export const NotificationCenter = () => {
       )
       .subscribe();
 
-    // Immediately show initial notifications to establish presence
-    const initialNotificationsTimer = setTimeout(() => {
-      // Show initial notification 3 seconds after page load as per requirements
-      const notification1 = generateUserActivityNotification();
-      setFloatingNotifications(prev => [notification1, ...prev.slice(0, 2)]);
-      
-      setTimeout(() => {
-        setFloatingNotifications(prev => prev.filter(n => n.id !== notification1.id));
-      }, 5000);
-    }, 3000); // Show initial notification 3 seconds after page load
-
     // Generate user activity notifications frequently for social proof
     const userActivityInterval = setInterval(() => {
       // 70% chance to show user activity notification as per requirements
@@ -267,7 +275,7 @@ export const NotificationCenter = () => {
       </Button>
 
       {/* Floating Notifications - Strategic positioning for maximum visibility */}
-      <div className="fixed bottom-32 right-6 z-50 space-y-3">
+      <div className="fixed bottom-40 right-6 z-50 space-y-3">
         <AnimatePresence>
           {floatingNotifications.map((notification) => (
             <motion.div
