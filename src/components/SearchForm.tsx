@@ -121,11 +121,27 @@ export const SearchForm = ({ selectedPlan = 'basic' }: SearchFormProps) => {
                 ? `Perfil principal identificado com alta confiança (${formData.name}) em múltiplas fontes públicas. Presença verificada em plataformas profissionais e redes sociais.` 
                 : `Perfil identificado com confiança moderada em plataformas profissionais e redes sociais.`,
               education: selectedPlan === 'complete' 
-                ? ['Bacharelado em Ciência da Computação - Universidade XYZ', 'Pós-graduação em Segurança da Informação - Instituto ABC'] 
-                : ['Bacharelado em Ciência da Computação - Universidade XYZ'],
+                ? [
+                    `Bacharelado em ${formData.name.toLowerCase().includes('silva') ? 'Engenharia de Software' : formData.name.toLowerCase().includes('santos') ? 'Ciência da Computação' : 'Ciência da Computação'} - ${formData.name.toLowerCase().includes('silva') ? 'Universidade Federal do Maranhão' : formData.name.toLowerCase().includes('santos') ? 'Universidade de São Paulo' : 'Universidade XYZ'}`,
+                    ...(formData.name.toLowerCase().includes('silva') ? ['Mestrado em Inteligência Artificial - Instituto Tecnológico de Aeronáutica'] : 
+                       formData.name.toLowerCase().includes('santos') ? ['Pós-graduação em Segurança da Informação - PUC-Rio'] : 
+                       ['Pós-graduação em Segurança da Informação - Instituto ABC'])
+                  ]
+                : [
+                    `Bacharelado em ${formData.name.toLowerCase().includes('silva') ? 'Engenharia de Software' : formData.name.toLowerCase().includes('santos') ? 'Ciência da Computação' : 'Ciência da Computação'} - ${formData.name.toLowerCase().includes('silva') ? 'Universidade Federal do Maranhão' : formData.name.toLowerCase().includes('santos') ? 'Universidade de São Paulo' : 'Universidade XYZ'}`
+                  ],
               experiences: selectedPlan === 'complete' 
-                ? ['Desenvolvedor Sênior - Empresa ABC (2020-Presente)', 'Analista de Sistemas - Empresa DEF (2018-2020)', 'Consultor de TI Freelancer (2016-2018)'] 
-                : ['Desenvolvedor Sênior - Empresa ABC (2020-Presente)', 'Analista de Sistemas - Empresa DEF (2018-2020)'],
+                ? [
+                    `${formData.name.toLowerCase().includes('silva') ? 'Engenheiro de Software Sênior' : formData.name.toLowerCase().includes('santos') ? 'Desenvolvedor Full Stack' : 'Desenvolvedor Sênior'} - ${formData.name.toLowerCase().includes('silva') ? 'Tech Solutions LTDA' : formData.name.toLowerCase().includes('santos') ? 'Inovação Digital S.A.' : 'Empresa ABC'} (2020-Presente)`,
+                    `${formData.name.toLowerCase().includes('silva') ? 'Analista de Sistemas' : formData.name.toLowerCase().includes('santos') ? 'Programador' : 'Analista de Sistemas'} - ${formData.name.toLowerCase().includes('silva') ? 'Sistemas Inteligentes ME' : formData.name.toLowerCase().includes('santos') ? 'Soluções Tecnológicas LTDA' : 'Empresa DEF'} (2018-2020)`,
+                    ...(formData.name.toLowerCase().includes('silva') ? ['Consultor de TI Freelancer (2016-2018)'] : 
+                       formData.name.toLowerCase().includes('santos') ? ['Desenvolvedor Mobile - Apps Modernos (2016-2018)'] : 
+                       ['Consultor de TI Freelancer (2016-2018)'])
+                  ]
+                : [
+                    `${formData.name.toLowerCase().includes('silva') ? 'Engenheiro de Software Sênior' : formData.name.toLowerCase().includes('santos') ? 'Desenvolvedor Full Stack' : 'Desenvolvedor Sênior'} - ${formData.name.toLowerCase().includes('silva') ? 'Tech Solutions LTDA' : formData.name.toLowerCase().includes('santos') ? 'Inovação Digital S.A.' : 'Empresa ABC'} (2020-Presente)`,
+                    `${formData.name.toLowerCase().includes('silva') ? 'Analista de Sistemas' : formData.name.toLowerCase().includes('santos') ? 'Programador' : 'Analista de Sistemas'} - ${formData.name.toLowerCase().includes('silva') ? 'Sistemas Inteligentes ME' : formData.name.toLowerCase().includes('santos') ? 'Soluções Tecnológicas LTDA' : 'Empresa DEF'} (2018-2020)`
+                  ],
               profiles: [
                 {
                   platform: 'LinkedIn',
@@ -209,15 +225,31 @@ export const SearchForm = ({ selectedPlan = 'basic' }: SearchFormProps) => {
             positiveData: selectedPlan === 'complete' 
               ? [
                   `Presença profissional consistente em ${formData.city || 'localização informada'}`,
-                  'Histórico educacional verificado em plataformas oficiais',
-                  'Experiência de trabalho comprovada em múltiplas empresas',
+                  formData.name.toLowerCase().includes('silva') 
+                    ? 'Histórico educacional verificado em plataformas oficiais do governo' 
+                    : formData.name.toLowerCase().includes('santos') 
+                      ? 'Histórico educacional verificado em universidades renomadas' 
+                      : 'Histórico educacional verificado em plataformas oficiais',
+                  formData.name.toLowerCase().includes('silva') 
+                    ? 'Experiência de trabalho comprovada em empresas de tecnologia' 
+                    : formData.name.toLowerCase().includes('santos') 
+                      ? 'Experiência de trabalho comprovada em startups inovadoras' 
+                      : 'Experiência de trabalho comprovada em múltiplas empresas',
                   'Atividade recente em redes sociais e plataformas profissionais',
                   'Presença em currículo Lattes e perfis GitHub'
                 ]
               : [
                   `Presença profissional consistente em ${formData.city || 'localização informada'}`,
-                  'Histórico educacional verificado',
-                  'Experiência de trabalho comprovada'
+                  formData.name.toLowerCase().includes('silva') 
+                    ? 'Histórico educacional verificado em plataformas oficiais do governo' 
+                    : formData.name.toLowerCase().includes('santos') 
+                      ? 'Histórico educacional verificado em universidades renomadas' 
+                      : 'Histórico educacional verificado',
+                  formData.name.toLowerCase().includes('silva') 
+                    ? 'Experiência de trabalho comprovada em empresas de tecnologia' 
+                    : formData.name.toLowerCase().includes('santos') 
+                      ? 'Experiência de trabalho comprovada em startups inovadoras' 
+                      : 'Experiência de trabalho comprovada'
                 ],
             negativeData: selectedPlan === 'complete' ? [
               'Possível perfil em plataforma adulta',
@@ -258,11 +290,27 @@ export const SearchForm = ({ selectedPlan = 'basic' }: SearchFormProps) => {
           searchQuery: `${formData.name}${formData.city ? ` ${formData.city}` : ''}${formData.username ? ` ${formData.username}` : ''}`,
           timestamp: new Date().toISOString(),
           education: selectedPlan === 'complete' 
-            ? ['Bacharelado em Ciência da Computação - Universidade XYZ', 'Pós-graduação em Segurança da Informação - Instituto ABC'] 
-            : ['Bacharelado em Ciência da Computação - Universidade XYZ'],
+            ? [
+                `Bacharelado em ${formData.name.toLowerCase().includes('silva') ? 'Engenharia de Software' : formData.name.toLowerCase().includes('santos') ? 'Ciência da Computação' : 'Ciência da Computação'} - ${formData.name.toLowerCase().includes('silva') ? 'Universidade Federal do Maranhão' : formData.name.toLowerCase().includes('santos') ? 'Universidade de São Paulo' : 'Universidade XYZ'}`,
+                ...(formData.name.toLowerCase().includes('silva') ? ['Mestrado em Inteligência Artificial - Instituto Tecnológico de Aeronáutica'] : 
+                   formData.name.toLowerCase().includes('santos') ? ['Pós-graduação em Segurança da Informação - PUC-Rio'] : 
+                   ['Pós-graduação em Segurança da Informação - Instituto ABC'])
+              ]
+            : [
+                `Bacharelado em ${formData.name.toLowerCase().includes('silva') ? 'Engenharia de Software' : formData.name.toLowerCase().includes('santos') ? 'Ciência da Computação' : 'Ciência da Computação'} - ${formData.name.toLowerCase().includes('silva') ? 'Universidade Federal do Maranhão' : formData.name.toLowerCase().includes('santos') ? 'Universidade de São Paulo' : 'Universidade XYZ'}`
+              ],
           experiences: selectedPlan === 'complete' 
-            ? ['Desenvolvedor Sênior - Empresa ABC (2020-Presente)', 'Analista de Sistemas - Empresa DEF (2018-2020)', 'Consultor de TI Freelancer (2016-2018)'] 
-            : ['Desenvolvedor Sênior - Empresa ABC (2020-Presente)', 'Analista de Sistemas - Empresa DEF (2018-2020)'],
+            ? [
+                `${formData.name.toLowerCase().includes('silva') ? 'Engenheiro de Software Sênior' : formData.name.toLowerCase().includes('santos') ? 'Desenvolvedor Full Stack' : 'Desenvolvedor Sênior'} - ${formData.name.toLowerCase().includes('silva') ? 'Tech Solutions LTDA' : formData.name.toLowerCase().includes('santos') ? 'Inovação Digital S.A.' : 'Empresa ABC'} (2020-Presente)`,
+                `${formData.name.toLowerCase().includes('silva') ? 'Analista de Sistemas' : formData.name.toLowerCase().includes('santos') ? 'Programador' : 'Analista de Sistemas'} - ${formData.name.toLowerCase().includes('silva') ? 'Sistemas Inteligentes ME' : formData.name.toLowerCase().includes('santos') ? 'Soluções Tecnológicas LTDA' : 'Empresa DEF'} (2018-2020)`,
+                ...(formData.name.toLowerCase().includes('silva') ? ['Consultor de TI Freelancer (2016-2018)'] : 
+                   formData.name.toLowerCase().includes('santos') ? ['Desenvolvedor Mobile - Apps Modernos (2016-2018)'] : 
+                   ['Consultor de TI Freelancer (2016-2018)'])
+              ]
+            : [
+                `${formData.name.toLowerCase().includes('silva') ? 'Engenheiro de Software Sênior' : formData.name.toLowerCase().includes('santos') ? 'Desenvolvedor Full Stack' : 'Desenvolvedor Sênior'} - ${formData.name.toLowerCase().includes('silva') ? 'Tech Solutions LTDA' : formData.name.toLowerCase().includes('santos') ? 'Inovação Digital S.A.' : 'Empresa ABC'} (2020-Presente)`,
+                `${formData.name.toLowerCase().includes('silva') ? 'Analista de Sistemas' : formData.name.toLowerCase().includes('santos') ? 'Programador' : 'Analista de Sistemas'} - ${formData.name.toLowerCase().includes('silva') ? 'Sistemas Inteligentes ME' : formData.name.toLowerCase().includes('santos') ? 'Soluções Tecnológicas LTDA' : 'Empresa DEF'} (2018-2020)`
+              ],
           photos: imageData ? [{
             url: 'https://example.com/uploaded-photo.jpg',
             reverseSearchResults: {
