@@ -193,9 +193,9 @@ export const SearchForm = ({ selectedPlan = 'basic' }: SearchFormProps) => {
               electoralData: 'Ficha limpa eleitoral'
             } : null,
             socialMedia: {
-              totalProfiles: selectedPlan === 'complete' ? 8 : 3,
+              totalProfiles: selectedPlan === 'complete' ? 10 : 3,
               platforms: selectedPlan === 'complete' ? 
-                ['LinkedIn', 'GitHub', 'Instagram', 'Twitter', 'Facebook', 'TikTok', 'OnlyFans (suspeito)', 'Privacy.com (suspeito)'] :
+                ['LinkedIn', 'GitHub', 'Instagram', 'Twitter', 'OnlyFans (suspeito)', 'Privacy.com (suspeito)', 'X/Twitter', 'Lattes', 'Serasa', 'JusBrasil'] :
                 ['LinkedIn', 'GitHub', 'Instagram']
             },
             positiveData: [
