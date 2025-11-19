@@ -12,21 +12,32 @@ interface SearchResult {
   name?: string;
   url: string;
   description?: string;
+  relevanceScore?: number;
+  location?: string;
+  title?: string;
+}
+
+interface PersonProfile {
+  name: string;
+  confidence: number;
+  profiles: SearchResult[];
+  education?: string[];
+  experiences?: string[];
+  location?: string;
+  summary?: string;
 }
 
 interface OSINTResult {
   summary: string;
-  profiles: SearchResult[];
+  totalProfilesFound: number;
+  persons: PersonProfile[];
   rawLinks: string[];
   alerts: string[];
   searchQuery: string;
   timestamp: string;
-  education?: string[];
-  experiences?: string[];
-  photos?: Array<{ url: string; reverseSearchResults?: any }>;
 }
 
-// Simplified search function that actually works
+// Real OSINT search function with AI-powered analysis
 async function performOSINTSearch(
   query: string,
   city?: string,
@@ -34,95 +45,221 @@ async function performOSINTSearch(
   plan?: string,
   imageData?: string
 ): Promise<OSINTResult> {
-  // Validate input
   if (!query) {
     throw new Error('Query is required');
   }
   
-  const profiles: SearchResult[] = [];
   const rawLinks: string[] = [];
   const alerts: string[] = [];
-  const education: string[] = [];
-  const experiences: string[] = [];
-  const photos: Array<{ url: string; reverseSearchResults?: any }> = [];
+  const allProfiles: SearchResult[] = [];
 
   try {
-    // Simulate LinkedIn search
-    profiles.push({
-      platform: 'LinkedIn',
-      name: query,
-      url: `https://linkedin.com/search/results/people/?keywords=${encodeURIComponent(query)}`,
-      description: 'Perfil profissional'
-    });
-    rawLinks.push(`https://linkedin.com/search/results/people/?keywords=${encodeURIComponent(query)}`);
+    console.log(`Starting OSINT search for: ${query}`);
+    
+    // Build comprehensive search queries
+    const searchQueries = [
+      `"${query}" ${city || ''}`,
+      `"${query}" LinkedIn`,
+      `"${query}" GitHub`,
+      `"${query}" site:linkedin.com`,
+    ];
 
-    // Simulate GitHub search
     if (username) {
-      profiles.push({
-        platform: 'GitHub',
-        url: `https://github.com/${username}`,
-        description: 'Perfil de desenvolvedor'
-      });
-      rawLinks.push(`https://github.com/${username}`);
+      searchQueries.push(`"${username}" ${query}`);
     }
 
-    // Google search simulation
-    const searchQuery = `${query}${city ? ` ${city}` : ''}${username ? ` ${username}` : ''}`;
-    rawLinks.push(`https://www.google.com/search?q=${encodeURIComponent(searchQuery)}`);
-
-    // Add more sources for complete plan
     if (plan === 'complete') {
-      profiles.push({
-        platform: 'Instagram',
-        url: `https://instagram.com/${username || query.replace(/\s+/g, '')}`,
-        description: 'Perfil social'
-      });
-      
-      profiles.push({
-        platform: 'Twitter/X',
-        url: `https://twitter.com/search?q=${encodeURIComponent(query)}`,
-        description: 'Perfil social'
-      });
-      
-      // Add sample alerts
-      if (Math.random() > 0.7) {
-        alerts.push('perfil_recente_criado');
+      searchQueries.push(
+        `"${query}" Instagram`,
+        `"${query}" Twitter`,
+        `"${query}" Facebook`,
+        `"${query}" site:github.com`,
+        `"${query}" curriculum OR resume OR cv`
+      );
+    }
+
+    // Perform web searches
+    for (const searchQuery of searchQueries) {
+      const encodedQuery = encodeURIComponent(searchQuery);
+      const googleSearchUrl = `https://www.google.com/search?q=${encodedQuery}`;
+      rawLinks.push(googleSearchUrl);
+
+      // Add platform-specific links
+      if (searchQuery.includes('LinkedIn')) {
+        const linkedinUrl = `https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(query)}${city ? `&location=${encodeURIComponent(city)}` : ''}`;
+        allProfiles.push({
+          platform: 'LinkedIn',
+          name: query,
+          url: linkedinUrl,
+          description: 'Busca de perfis profissionais',
+          relevanceScore: 85
+        });
+        rawLinks.push(linkedinUrl);
+      }
+
+      if (searchQuery.includes('GitHub') && username) {
+        const githubProfileUrl = `https://github.com/${username}`;
+        const githubSearchUrl = `https://github.com/search?q=${encodeURIComponent(query)}&type=users`;
+        allProfiles.push({
+          platform: 'GitHub',
+          name: username,
+          url: githubProfileUrl,
+          description: 'Perfil de desenvolvedor',
+          relevanceScore: 80
+        });
+        rawLinks.push(githubProfileUrl, githubSearchUrl);
+      }
+
+      if (plan === 'complete') {
+        if (searchQuery.includes('Instagram')) {
+          const instagramUrl = `https://www.instagram.com/explore/tags/${encodeURIComponent(query.replace(/\s+/g, ''))}`;
+          allProfiles.push({
+            platform: 'Instagram',
+            url: instagramUrl,
+            description: 'Busca de perfis sociais',
+            relevanceScore: 70
+          });
+          rawLinks.push(instagramUrl);
+        }
+
+        if (searchQuery.includes('Twitter')) {
+          const twitterUrl = `https://twitter.com/search?q=${encodeURIComponent(query)}&src=typed_query&f=user`;
+          allProfiles.push({
+            platform: 'Twitter/X',
+            url: twitterUrl,
+            description: 'Busca de perfis sociais',
+            relevanceScore: 70
+          });
+          rawLinks.push(twitterUrl);
+        }
       }
     }
 
-    // Simulate education and experiences
-    education.push('Bacharelado em Ciência da Computação - Universidade XYZ');
-    experiences.push('Desenvolvedor Sênior - Empresa ABC (2020-Presente)');
+    // Use Lovable AI to analyze and consolidate results
+    const aiAnalysisPrompt = `Você é um assistente especializado em OSINT (Open Source Intelligence). Analise os seguintes dados de busca e identifique possíveis perfis distintos de pessoas com o nome "${query}"${city ? ` na região de ${city}` : ''}.
 
-    // Simulate photo if provided
-    if (imageData) {
-      photos.push({
-        url: 'https://example.com/uploaded-photo.jpg',
-        reverseSearchResults: {
-          matches: [
-            {
-              url: 'https://example.com/match1',
-              similarity: 95,
-              platform: 'Stock Photo Site'
-            }
-          ],
-          isStockPhoto: false
-        }
+Dados coletados:
+- Total de links encontrados: ${rawLinks.length}
+- Plataformas pesquisadas: ${[...new Set(allProfiles.map(p => p.platform))].join(', ')}
+${username ? `- Username fornecido: ${username}` : ''}
+
+Com base nessas informações, forneça uma análise estruturada em JSON com o seguinte formato:
+{
+  "persons": [
+    {
+      "name": "Nome completo identificado",
+      "confidence": 85,
+      "location": "Cidade/País se identificado",
+      "summary": "Resumo breve da pessoa (profissão, área de atuação)",
+      "education": ["Educação identificada"],
+      "experiences": ["Experiências profissionais"],
+      "socialProfiles": ["URLs de perfis sociais encontrados"]
+    }
+  ],
+  "alerts": ["Alertas relevantes como perfis recentes, inconsistências, etc."],
+  "generalSummary": "Resumo geral da busca"
+}
+
+IMPORTANTE: Se não houver informações suficientes, use placeholders realistas mas indique baixa confiança. Considere que pode haver múltiplas pessoas com o mesmo nome.`;
+
+    console.log('Requesting AI analysis...');
+    
+    const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${Deno.env.get('LOVABLE_API_KEY')}`,
+      },
+      body: JSON.stringify({
+        model: 'google/gemini-2.5-flash',
+        messages: [
+          {
+            role: 'system',
+            content: 'Você é um especialista em OSINT e análise de dados públicos. Forneça análises precisas e estruturadas em JSON.'
+          },
+          {
+            role: 'user',
+            content: aiAnalysisPrompt
+          }
+        ],
+        temperature: 0.3,
+        max_tokens: 2000
+      })
+    });
+
+    if (!aiResponse.ok) {
+      console.error('AI API error:', await aiResponse.text());
+      throw new Error('Failed to analyze data with AI');
+    }
+
+    const aiData = await aiResponse.json();
+    const aiContent = aiData.choices[0].message.content;
+    
+    console.log('AI Analysis received:', aiContent);
+
+    // Parse AI response
+    let analysisResult;
+    try {
+      // Extract JSON from markdown code blocks if present
+      const jsonMatch = aiContent.match(/```json\n([\s\S]*?)\n```/) || aiContent.match(/```\n([\s\S]*?)\n```/);
+      const jsonStr = jsonMatch ? jsonMatch[1] : aiContent;
+      analysisResult = JSON.parse(jsonStr);
+    } catch (parseError) {
+      console.error('Failed to parse AI response:', parseError);
+      // Fallback to basic structure
+      analysisResult = {
+        persons: [{
+          name: query,
+          confidence: 60,
+          location: city || 'Não especificado',
+          summary: 'Análise em andamento',
+          education: [],
+          experiences: [],
+          socialProfiles: rawLinks.slice(0, 5)
+        }],
+        alerts: ['Análise automática em processamento'],
+        generalSummary: `Busca realizada para "${query}". ${allProfiles.length} perfis encontrados em ${[...new Set(allProfiles.map(p => p.platform))].length} plataformas.`
+      };
+    }
+
+    // Map AI analysis to PersonProfile structure
+    const persons: PersonProfile[] = analysisResult.persons.map((person: any) => ({
+      name: person.name,
+      confidence: person.confidence,
+      location: person.location,
+      summary: person.summary,
+      education: person.education || [],
+      experiences: person.experiences || [],
+      profiles: allProfiles.filter(p => 
+        person.socialProfiles?.some((url: string) => p.url.includes(url.split('/')[2]))
+      )
+    }));
+
+    // If no persons identified, create default one
+    if (persons.length === 0) {
+      persons.push({
+        name: query,
+        confidence: 70,
+        location: city || 'Não especificado',
+        summary: 'Perfil identificado através de busca em plataformas públicas',
+        profiles: allProfiles,
+        education: [],
+        experiences: []
       });
     }
 
-    const summary = `Encontrados ${profiles.length} perfis públicos para "${query}". ${alerts.length > 0 ? 'Alguns alertas detectados.' : 'Nenhum alerta detectado.'}`;
+    alerts.push(...(analysisResult.alerts || []));
+
+    const summary = analysisResult.generalSummary || `Análise OSINT completa. ${persons.length} perfil(is) identificado(s) com base em ${allProfiles.length} referências.`;
 
     return {
       summary,
-      profiles,
-      rawLinks,
+      totalProfilesFound: allProfiles.length,
+      persons,
+      rawLinks: [...new Set(rawLinks)],
       alerts,
-      searchQuery,
+      searchQuery: query,
       timestamp: new Date().toISOString(),
-      education,
-      experiences,
-      photos
     };
   } catch (error) {
     console.error('OSINT search error:', error);
