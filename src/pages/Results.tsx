@@ -1,35 +1,48 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Card } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, Download, ExternalLink, AlertTriangle, CheckCircle, User, MapPin, LinkIcon, Search, GraduationCap, Briefcase, Image } from 'lucide-react';
+import { ExternalLink, AlertTriangle, CheckCircle, User, Search, GraduationCap, Briefcase, FileText } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
 interface SearchResult {
+  platform: string;
+  name?: string;
+  url: string;
+  description?: string;
+  relevanceScore?: number;
+  location?: string;
+  title?: string;
+}
+
+interface PersonProfile {
+  name: string;
+  confidence: number;
+  profiles: SearchResult[];
+  education?: string[];
+  experiences?: string[];
+  location?: string;
+  summary?: string;
+}
+
+interface OSINTResult {
   summary: string;
-  profiles: Array<{
-    platform: string;
-    name?: string;
-    url: string;
-    description?: string;
-  }>;
+  totalProfilesFound: number;
+  persons: PersonProfile[];
   rawLinks: string[];
   alerts: string[];
   searchQuery: string;
   timestamp: string;
-  education?: string[];
-  experiences?: string[];
-  photos?: Array<{ url: string; reverseSearchResults?: any }>;
 }
 
 const Results = () => {
   const [searchParams] = useSearchParams();
   const jobId = searchParams.get('jobId');
   const [loading, setLoading] = useState(true);
-  const [job, setJob] = useState<any>(null);
-  const [results, setResults] = useState<SearchResult | null>(null);
+  const [results, setResults] = useState<OSINTResult | null>(null);
+  const [selectedPerson, setSelectedPerson] = useState<number>(0);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -47,7 +60,6 @@ const Results = () => {
 
   const fetchJobStatus = async () => {
     try {
-      // Fetch job directly from database instead of using function
       const { data, error } = await supabase
         .from('search_jobs')
         .select('*')
@@ -56,13 +68,10 @@ const Results = () => {
 
       if (error) throw error;
 
-      setJob(data);
-
       if (data.status === 'pending' || data.status === 'processing') {
-        // Continue polling
         setTimeout(fetchJobStatus, 2000);
       } else if (data.status === 'completed') {
-        setResults(data.result_data as unknown as SearchResult);
+        setResults(data.result_data as unknown as OSINTResult);
         setLoading(false);
       } else if (data.status === 'failed') {
         toast({
@@ -102,9 +111,9 @@ const Results = () => {
             Processando Pesquisa...
           </h2>
           <p className="text-muted-foreground">
-            Analisando múltiplas fontes públicas
+            Analisando múltiplas fontes públicas com IA
           </p>
-          <div className="mt-4 w-48 h-2 bg-muted rounded-full overflow-hidden">
+          <div className="mt-4 w-48 h-2 bg-muted rounded-full overflow-hidden mx-auto">
             <motion.div
               className="h-full bg-gradient-to-r from-primary to-secondary"
               initial={{ width: "0%" }}
@@ -120,299 +129,193 @@ const Results = () => {
   if (!results) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <Card className="glass p-8 max-w-md text-center">
-          <h2 className="text-2xl font-bold text-foreground mb-4">
-            Nenhum resultado encontrado
-          </h2>
-          <Link to="/search">
-            <Button className="bg-gradient-to-r from-primary to-secondary">
-              Nova Pesquisa
+        <Card className="max-w-md">
+          <CardHeader>
+            <CardTitle>Nenhum resultado encontrado</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Button asChild>
+              <Link to="/search">Nova Busca</Link>
             </Button>
-          </Link>
+          </CardContent>
         </Card>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background cyber-grid">
-      <div className="container mx-auto px-4 py-16">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-        >
-          <div className="mb-8 text-center">
-            <motion.h1 
-              className="text-4xl font-bold mb-2 text-glow bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent"
-              initial={{ scale: 0.9 }}
-              animate={{ scale: 1 }}
-              transition={{ type: "spring", stiffness: 300 }}
-            >
-              Resultados da Pesquisa OSINT
-            </motion.h1>
-            <p className="text-muted-foreground">
-              Pesquisa: {job?.query} {job?.city && `(${job.city})`}
-            </p>
-          </div>
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
+      <div className="container mx-auto px-4 py-8">
+        <div className="mb-6">
+          <Button variant="ghost" asChild>
+            <Link to="/search">← Voltar para busca</Link>
+          </Button>
+        </div>
 
-          {/* Summary */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-          >
-            <Card className="glass p-6 mb-6 border-primary/30 relative overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-secondary/10 animate-pulse" />
-              <div className="relative z-10">
-                <h2 className="text-2xl font-bold text-foreground mb-4 flex items-center gap-2">
-                  <CheckCircle className="w-6 h-6 text-primary" />
-                  Resumo
-                </h2>
-                <p className="text-foreground">{results.summary}</p>
-              </div>
-            </Card>
-          </motion.div>
-
-          {/* Alerts */}
-          {results.alerts.length > 0 && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-            >
-              <Card className="glass p-6 mb-6 border-destructive/50 relative overflow-hidden">
-                <div className="absolute inset-0 bg-destructive/10 animate-pulse" />
-                <div className="relative z-10">
-                  <h2 className="text-2xl font-bold text-foreground mb-4 flex items-center gap-2">
-                    <AlertTriangle className="w-6 h-6 text-destructive" />
-                    Alertas
-                  </h2>
-                  <ul className="space-y-2">
-                    {results.alerts.map((alert, index) => (
-                      <motion.li 
-                        key={index} 
-                        className="flex items-start gap-2 text-foreground"
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: 0.3 + index * 0.1 }}
-                      >
-                        <span className="text-destructive">•</span>
-                        {alert.replace(/_/g, ' ')}
-                      </motion.li>
-                    ))}
-                  </ul>
-                </div>
-              </Card>
-            </motion.div>
-          )}
-
-          {/* Education and Experiences */}
-          {(results.education?.length || results.experiences?.length) > 0 && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-            >
-              <Card className="glass p-6 mb-6">
-                <h2 className="text-2xl font-bold text-foreground mb-4 flex items-center gap-2">
-                  <GraduationCap className="w-6 h-6 text-primary" />
-                  Formação e Experiências
-                </h2>
-                <div className="grid md:grid-cols-2 gap-6">
-                  {results.education?.length > 0 && (
-                    <div>
-                      <h3 className="font-bold text-foreground mb-3 flex items-center gap-2">
-                        <GraduationCap className="w-5 h-5" />
-                        Formação
-                      </h3>
-                      <ul className="space-y-2">
-                        {results.education.map((edu, index) => (
-                          <li key={index} className="text-foreground bg-muted/30 p-3 rounded-lg">
-                            {edu}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                  {results.experiences?.length > 0 && (
-                    <div>
-                      <h3 className="font-bold text-foreground mb-3 flex items-center gap-2">
-                        <Briefcase className="w-5 h-5" />
-                        Experiências
-                      </h3>
-                      <ul className="space-y-2">
-                        {results.experiences.map((exp, index) => (
-                          <li key={index} className="text-foreground bg-muted/30 p-3 rounded-lg">
-                            {exp}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                </div>
-              </Card>
-            </motion.div>
-          )}
-
-          {/* Photos */}
-          {results.photos?.length > 0 && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4 }}
-            >
-              <Card className="glass p-6 mb-6">
-                <h2 className="text-2xl font-bold text-foreground mb-4 flex items-center gap-2">
-                  <Image className="w-6 h-6 text-primary" />
-                  Fotos Encontradas
-                </h2>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  {results.photos.map((photo, index) => (
-                    <div key={index} className="relative group">
-                      <img 
-                        src={photo.url} 
-                        alt={`Foto ${index + 1}`} 
-                        className="w-full h-40 object-cover rounded-lg border border-border"
-                      />
-                      {photo.reverseSearchResults && (
-                        <div className="absolute inset-0 bg-black/70 flex items-center justify-center rounded-lg opacity-0 group-hover:opacity-100 transition-opacity">
-                          <div className="text-white text-center p-2">
-                            <p className="text-sm font-bold">
-                              Similaridade: {photo.reverseSearchResults.matches[0]?.similarity || 'N/A'}%
-                            </p>
-                            <p className="text-xs">
-                              {photo.reverseSearchResults.matches[0]?.platform || 'Desconhecido'}
-                            </p>
-                          </div>
-                        </div>
-                      )}
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <CheckCircle className="w-6 h-6 text-green-500" />
+              Resultados da Busca OSINT
+            </CardTitle>
+            <CardDescription>
+              Pesquisa: {results.searchQuery} | {results.totalProfilesFound} referências encontradas
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-muted-foreground mb-6">{results.summary}</p>
+            
+            {results.alerts && results.alerts.length > 0 && (
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold mb-2 flex items-center gap-2">
+                  <AlertTriangle className="w-5 h-5 text-destructive" />
+                  Alertas
+                </h3>
+                <div className="space-y-2">
+                  {results.alerts.map((alert: string, index: number) => (
+                    <div key={index} className="bg-destructive/10 text-destructive p-3 rounded-lg">
+                      {alert}
                     </div>
                   ))}
                 </div>
-              </Card>
-            </motion.div>
-          )}
-
-          {/* Profiles Found */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5 }}
-          >
-            <Card className="glass p-6 mb-6">
-              <h2 className="text-2xl font-bold text-foreground mb-4 flex items-center gap-2">
-                <User className="w-6 h-6 text-primary" />
-                Perfis Encontrados ({results.profiles.length})
-              </h2>
-              <div className="grid gap-4">
-                {results.profiles.map((profile, index) => (
-                  <motion.div
-                    key={index}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.6 + index * 0.1 }}
-                    className="p-4 rounded-lg bg-muted/30 border border-border hover:border-primary transition-all duration-300 hover:shadow-lg hover:shadow-primary/20"
-                  >
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <h3 className="font-bold text-foreground text-lg">
-                          {profile.platform}
-                        </h3>
-                        {profile.name && (
-                          <p className="text-muted-foreground">{profile.name}</p>
-                        )}
-                        {profile.description && (
-                          <p className="text-sm text-muted-foreground mt-1">
-                            {profile.description}
-                          </p>
-                        )}
-                      </div>
-                      <a
-                        href={profile.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-primary hover:text-primary-glow transition-colors"
-                      >
-                        <ExternalLink className="w-5 h-5" />
-                      </a>
-                    </div>
-                  </motion.div>
-                ))}
               </div>
-            </Card>
-          </motion.div>
+            )}
 
-          {/* All Links */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.7 }}
-          >
-            <Card className="glass p-6 mb-6">
-              <h2 className="text-2xl font-bold text-foreground mb-4 flex items-center gap-2">
-                <LinkIcon className="w-6 h-6 text-primary" />
-                Fontes Consultadas
-              </h2>
-              <ul className="space-y-2">
-                {results.rawLinks.map((link, index) => (
-                  <motion.li 
-                    key={index}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.8 + index * 0.05 }}
-                  >
+            {results.persons && results.persons.length > 0 && (
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                  <User className="w-5 h-5" />
+                  Perfis Identificados ({results.persons.length})
+                </h3>
+                
+                {results.persons.length > 1 && (
+                  <div className="mb-4 flex gap-2 flex-wrap">
+                    {results.persons.map((person: PersonProfile, index: number) => (
+                      <button
+                        key={index}
+                        onClick={() => setSelectedPerson(index)}
+                        className={`px-4 py-2 rounded-lg transition-colors ${
+                          selectedPerson === index
+                            ? 'bg-primary text-primary-foreground'
+                            : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
+                        }`}
+                      >
+                        {person.name} ({person.confidence}% confiança)
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                {results.persons[selectedPerson] && (
+                  <div className="space-y-6">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>{results.persons[selectedPerson].name}</CardTitle>
+                        <CardDescription>
+                          Confiança: {results.persons[selectedPerson].confidence}% | 
+                          Localização: {results.persons[selectedPerson].location || 'Não especificado'}
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-muted-foreground mb-4">
+                          {results.persons[selectedPerson].summary}
+                        </p>
+
+                        {results.persons[selectedPerson].education && results.persons[selectedPerson].education!.length > 0 && (
+                          <div className="mb-4">
+                            <h4 className="font-semibold mb-2 flex items-center gap-2">
+                              <GraduationCap className="w-4 h-4" />
+                              Educação
+                            </h4>
+                            <ul className="list-disc list-inside space-y-1">
+                              {results.persons[selectedPerson].education!.map((edu: string, idx: number) => (
+                                <li key={idx} className="text-sm text-muted-foreground">{edu}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+
+                        {results.persons[selectedPerson].experiences && results.persons[selectedPerson].experiences!.length > 0 && (
+                          <div className="mb-4">
+                            <h4 className="font-semibold mb-2 flex items-center gap-2">
+                              <Briefcase className="w-4 h-4" />
+                              Experiências
+                            </h4>
+                            <ul className="list-disc list-inside space-y-1">
+                              {results.persons[selectedPerson].experiences!.map((exp: string, idx: number) => (
+                                <li key={idx} className="text-sm text-muted-foreground">{exp}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+
+                    {results.persons[selectedPerson].profiles && results.persons[selectedPerson].profiles.length > 0 && (
+                      <div>
+                        <h4 className="font-semibold mb-3">Perfis e Referências Online</h4>
+                        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                          {results.persons[selectedPerson].profiles.map((profile: SearchResult, idx: number) => (
+                            <Card key={idx}>
+                              <CardHeader>
+                                <CardTitle className="text-base">{profile.platform}</CardTitle>
+                                {profile.relevanceScore && (
+                                  <CardDescription>
+                                    Relevância: {profile.relevanceScore}%
+                                  </CardDescription>
+                                )}
+                              </CardHeader>
+                              <CardContent>
+                                {profile.title && (
+                                  <p className="text-sm font-medium mb-1">{profile.title}</p>
+                                )}
+                                <p className="text-sm text-muted-foreground mb-2">
+                                  {profile.description}
+                                </p>
+                                <a
+                                  href={profile.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-primary hover:underline flex items-center gap-1 text-sm"
+                                >
+                                  Acessar perfil
+                                  <ExternalLink className="w-3 h-3" />
+                                </a>
+                              </CardContent>
+                            </Card>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {results.rawLinks && results.rawLinks.length > 0 && (
+              <div>
+                <h3 className="text-lg font-semibold mb-2 flex items-center gap-2">
+                  <FileText className="w-5 h-5" />
+                  Todas as Referências ({results.rawLinks.length})
+                </h3>
+                <div className="space-y-2 max-h-60 overflow-y-auto bg-muted/50 p-4 rounded-lg">
+                  {results.rawLinks.map((link: string, index: number) => (
                     <a
+                      key={index}
                       href={link}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-primary hover:underline break-all flex items-center gap-2"
+                      className="block text-sm text-primary hover:underline flex items-center gap-1"
                     >
-                      <MapPin className="w-4 h-4 flex-shrink-0" />
+                      <ExternalLink className="w-3 h-3" />
                       {link}
                     </a>
-                  </motion.li>
-                ))}
-              </ul>
-            </Card>
-          </motion.div>
-
-          {/* Legal Notice */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.9 }}
-          >
-            <Card className="glass p-6 mb-6 bg-muted/20">
-              <p className="text-sm text-muted-foreground">
-                <strong>Aviso Legal:</strong> Todas as informações apresentadas são de
-                fontes públicas. Verifique sempre antes de tomar decisões. Não utilize
-                para assédio, discriminação ou fins ilegais.
-              </p>
-            </Card>
-          </motion.div>
-
-          {/* Actions */}
-          <motion.div
-            className="flex gap-4 flex-wrap justify-center"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 1.0 }}
-          >
-            <Button
-              size="lg"
-              className="bg-gradient-to-r from-primary to-secondary hover:opacity-90 shadow-lg shadow-primary/30"
-              onClick={() => window.print()}
-            >
-              <Download className="w-5 h-5 mr-2" />
-              Baixar Relatório (PDF)
-            </Button>
-            <Link to="/search">
-              <Button size="lg" variant="outline" className="border-primary text-primary hover:bg-primary/10">
-                Nova Pesquisa
-              </Button>
-            </Link>
-          </motion.div>
-        </motion.div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
