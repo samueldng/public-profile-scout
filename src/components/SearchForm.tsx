@@ -108,16 +108,24 @@ export const SearchForm = ({ selectedPlan = 'basic' }: SearchFormProps) => {
       setTimeout(async () => {
         // Create comprehensive mock results with expanded data sources
         const mockResults = {
-          summary: `Análise completa realizada para "${formData.name}". Foram encontrados perfis em múltiplas plataformas.`,
+          summary: selectedPlan === 'complete' 
+            ? `Análise completa realizada para "${formData.name}". Foram encontrados perfis em ${selectedPlan === 'complete' ? 10 : 3} plataformas diferentes, incluindo redes sociais, perfis profissionais e dados governamentais.` 
+            : `Análise básica realizada para "${formData.name}". Foram identificados perfis em plataformas principais como LinkedIn, GitHub e Instagram.`,
           totalProfilesFound: selectedPlan === 'complete' ? 12 : 5,
           persons: [
             {
               name: formData.name,
               confidence: 95,
               location: formData.city || 'Não especificado',
-              summary: 'Perfil principal identificado com alta confiança. Verificado em múltiplas fontes públicas.',
-              education: ['Bacharelado em Ciência da Computação - Universidade XYZ'],
-              experiences: ['Desenvolvedor Sênior - Empresa ABC (2020-Presente)', 'Analista de Sistemas - Empresa DEF (2018-2020)'],
+              summary: selectedPlan === 'complete' 
+                ? `Perfil principal identificado com alta confiança (${formData.name}) em múltiplas fontes públicas. Presença verificada em plataformas profissionais e redes sociais.` 
+                : `Perfil identificado com confiança moderada em plataformas profissionais e redes sociais.`,
+              education: selectedPlan === 'complete' 
+                ? ['Bacharelado em Ciência da Computação - Universidade XYZ', 'Pós-graduação em Segurança da Informação - Instituto ABC'] 
+                : ['Bacharelado em Ciência da Computação - Universidade XYZ'],
+              experiences: selectedPlan === 'complete' 
+                ? ['Desenvolvedor Sênior - Empresa ABC (2020-Presente)', 'Analista de Sistemas - Empresa DEF (2018-2020)', 'Consultor de TI Freelancer (2016-2018)'] 
+                : ['Desenvolvedor Sênior - Empresa ABC (2020-Presente)', 'Analista de Sistemas - Empresa DEF (2018-2020)'],
               profiles: [
                 {
                   platform: 'LinkedIn',
@@ -187,10 +195,10 @@ export const SearchForm = ({ selectedPlan = 'basic' }: SearchFormProps) => {
           ],
           rawData: {
             governmentData: selectedPlan === 'complete' ? {
-              serasaScore: '750 (Bom)',
-              judicialRecords: 'Nenhum processo em andamento',
-              fiscalDebts: 'Nenhuma dívida ativa encontrada',
-              electoralData: 'Ficha limpa eleitoral'
+              serasaScore: formData.name.toLowerCase().includes('silva') ? '820 (Excelente)' : '750 (Bom)',
+              judicialRecords: formData.name.toLowerCase().includes('silva') ? 'Nenhum processo em andamento' : 'Nenhum processo em andamento',
+              fiscalDebts: formData.name.toLowerCase().includes('silva') ? 'Nenhuma dívida ativa encontrada' : 'Nenhuma dívida ativa encontrada',
+              electoralData: formData.name.toLowerCase().includes('silva') ? 'Ficha limpa eleitoral' : 'Ficha limpa eleitoral'
             } : null,
             socialMedia: {
               totalProfiles: selectedPlan === 'complete' ? 10 : 3,
@@ -198,11 +206,19 @@ export const SearchForm = ({ selectedPlan = 'basic' }: SearchFormProps) => {
                 ['LinkedIn', 'GitHub', 'Instagram', 'Twitter', 'OnlyFans (suspeito)', 'Privacy.com (suspeito)', 'X/Twitter', 'Lattes', 'Serasa', 'JusBrasil'] :
                 ['LinkedIn', 'GitHub', 'Instagram']
             },
-            positiveData: [
-              'Presença profissional consistente',
-              'Histórico educacional verificado',
-              'Experiência de trabalho comprovada'
-            ],
+            positiveData: selectedPlan === 'complete' 
+              ? [
+                  `Presença profissional consistente em ${formData.city || 'localização informada'}`,
+                  'Histórico educacional verificado em plataformas oficiais',
+                  'Experiência de trabalho comprovada em múltiplas empresas',
+                  'Atividade recente em redes sociais e plataformas profissionais',
+                  'Presença em currículo Lattes e perfis GitHub'
+                ]
+              : [
+                  `Presença profissional consistente em ${formData.city || 'localização informada'}`,
+                  'Histórico educacional verificado',
+                  'Experiência de trabalho comprovada'
+                ],
             negativeData: selectedPlan === 'complete' ? [
               'Possível perfil em plataforma adulta',
               'Alguns comentários controversos em redes sociais'
@@ -232,13 +248,21 @@ export const SearchForm = ({ selectedPlan = 'basic' }: SearchFormProps) => {
             ] : [])
           ],
           alerts: selectedPlan === 'complete' ? [
-            'Atenção: Possível perfil em plataforma adulta identificado',
-            'Recomendação: Verificar conteúdo antes de contato profissional'
-          ] : [],
+            formData.name.toLowerCase().includes('silva') 
+              ? 'Atenção: Possível perfil em plataforma adulta identificado' 
+              : 'Recomendação: Verificar conteúdo antes de contato profissional',
+            `Perfil encontrado em ${Math.floor(Math.random() * 5) + 3} redes sociais diferentes`
+          ] : [
+            `Perfil encontrado em ${Math.floor(Math.random() * 3) + 2} plataformas`
+          ],
           searchQuery: `${formData.name}${formData.city ? ` ${formData.city}` : ''}${formData.username ? ` ${formData.username}` : ''}`,
           timestamp: new Date().toISOString(),
-          education: ['Bacharelado em Ciência da Computação - Universidade XYZ'],
-          experiences: ['Desenvolvedor Sênior - Empresa ABC (2020-Presente)'],
+          education: selectedPlan === 'complete' 
+            ? ['Bacharelado em Ciência da Computação - Universidade XYZ', 'Pós-graduação em Segurança da Informação - Instituto ABC'] 
+            : ['Bacharelado em Ciência da Computação - Universidade XYZ'],
+          experiences: selectedPlan === 'complete' 
+            ? ['Desenvolvedor Sênior - Empresa ABC (2020-Presente)', 'Analista de Sistemas - Empresa DEF (2018-2020)', 'Consultor de TI Freelancer (2016-2018)'] 
+            : ['Desenvolvedor Sênior - Empresa ABC (2020-Presente)', 'Analista de Sistemas - Empresa DEF (2018-2020)'],
           photos: imageData ? [{
             url: 'https://example.com/uploaded-photo.jpg',
             reverseSearchResults: {
