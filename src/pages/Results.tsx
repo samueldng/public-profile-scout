@@ -89,7 +89,11 @@ const Results = () => {
       if (data.status === 'pending' || data.status === 'processing') {
         setTimeout(fetchJobStatus, 2000);
       } else if (data.status === 'completed') {
-        setResults(data.result_data as unknown as OSINTResult);
+        // Parse the JSON data if it's a string
+        const parsedData = typeof data.result_data === 'string' 
+          ? JSON.parse(data.result_data) 
+          : data.result_data;
+        setResults(parsedData as unknown as OSINTResult);
         setLoading(false);
       } else if (data.status === 'failed') {
         toast({
@@ -113,7 +117,6 @@ const Results = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <Header />
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
