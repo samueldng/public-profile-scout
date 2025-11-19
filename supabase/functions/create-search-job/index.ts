@@ -18,7 +18,7 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    const { query, city, username, plan, imageData } = await req.json();
+    const { query, city, username, plan } = await req.json();
 
     // Validate input
     if (!query || !plan) {
@@ -37,7 +37,6 @@ serve(async (req) => {
         username: username?.trim() || null,
         plan,
         status: 'pending',
-        image_data: imageData || null,
       })
       .select()
       .single();

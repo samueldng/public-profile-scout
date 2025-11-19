@@ -42,8 +42,7 @@ async function performOSINTSearch(
   query: string,
   city?: string,
   username?: string,
-  plan?: string,
-  imageData?: string
+  plan?: string
 ): Promise<OSINTResult> {
   if (!query) {
     throw new Error('Query is required');
@@ -316,8 +315,7 @@ serve(async (req) => {
         job.query,
         job.city,
         job.username,
-        job.plan,
-        job.image_data
+        job.plan
       );
 
       // Update job with results

@@ -94,7 +94,6 @@ export const SearchForm = ({ selectedPlan = 'basic' }: SearchFormProps) => {
           username: formData.username?.trim() || null,
           plan: selectedPlan,
           status: 'pending',
-          image_data: imageData || null,
         })
         .select()
         .single();
