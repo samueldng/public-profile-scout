@@ -206,12 +206,12 @@ export const NotificationCenter = () => {
           setFloatingNotifications(prev => prev.filter(n => n.id !== notification2.id));
         }, 5000);
       }, 1000);
-    }, 1500);
+    }, 500); // Reduced from 1500ms to 500ms for faster initial notifications
 
     // Generate user activity notifications frequently for social proof
     const userActivityInterval = setInterval(() => {
-      // 80% chance to show user activity notification
-      if (Math.random() > 0.2) {
+      // 90% chance to show user activity notification (increased from 80%)
+      if (Math.random() > 0.1) {
         const notification = generateUserActivityNotification();
         setFloatingNotifications(prev => [notification, ...prev.slice(0, 2)]);
         
@@ -219,12 +219,12 @@ export const NotificationCenter = () => {
           setFloatingNotifications(prev => prev.filter(n => n.id !== notification.id));
         }, 5000);
       }
-    }, 4000);
+    }, 3000); // Reduced from 4000ms to 3000ms for more frequent notifications
 
     // Generate trust-building notifications less frequently
     const trustNotificationInterval = setInterval(() => {
-      // 30% chance to show trust notification
-      if (Math.random() > 0.7) {
+      // 50% chance to show trust notification (increased from 30%)
+      if (Math.random() > 0.5) {
         const notification = generateTrustNotification();
         setFloatingNotifications(prev => [notification, ...prev.slice(0, 2)]);
         
@@ -232,7 +232,7 @@ export const NotificationCenter = () => {
           setFloatingNotifications(prev => prev.filter(n => n.id !== notification.id));
         }, 5000);
       }
-    }, 12000);
+    }, 8000); // Reduced from 12000ms to 8000ms for more frequent notifications
 
     return () => {
       supabase.removeChannel(channel);
@@ -277,7 +277,7 @@ export const NotificationCenter = () => {
       </Button>
 
       {/* Floating Notifications - Strategic positioning for maximum visibility */}
-      <div className="fixed bottom-24 right-6 z-50 space-y-3">
+      <div className="fixed bottom-32 right-6 z-50 space-y-3">
         <AnimatePresence>
           {floatingNotifications.map((notification) => (
             <motion.div

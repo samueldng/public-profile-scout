@@ -156,6 +156,30 @@ export const SearchForm = ({ selectedPlan = 'basic' }: SearchFormProps) => {
                     url: '#',
                     description: 'Possível perfil em plataforma de conteúdo adulto',
                     relevanceScore: 60
+                  },
+                  {
+                    platform: 'X/Twitter',
+                    url: `https://x.com/search?q=${encodeURIComponent(formData.name)}&lang=pt`,
+                    description: 'Busca em perfis do Twitter/X',
+                    relevanceScore: 75
+                  },
+                  {
+                    platform: 'Lattes',
+                    url: 'https://lattes.cnpq.br/',
+                    description: 'Currículo Lattes - Plataforma brasileira de currículos',
+                    relevanceScore: 80
+                  },
+                  {
+                    platform: 'Serasa',
+                    url: `https://empresas.serasaexperian.com.br/busca-empresa/${encodeURIComponent(formData.name)}`,
+                    description: 'Consulta empresarial no Serasa Experian',
+                    relevanceScore: 65
+                  },
+                  {
+                    platform: 'JusBrasil',
+                    url: `https://www.jusbrasil.com.br/busca?q=${encodeURIComponent(formData.name)}`,
+                    description: 'Busca em documentos jurídicos e processos',
+                    relevanceScore: 70
                   }
                 ] : [])
               ]
@@ -200,7 +224,11 @@ export const SearchForm = ({ selectedPlan = 'basic' }: SearchFormProps) => {
               `https://instagram.com/${formData.username || formData.name.replace(/\s+/g, '')}`,
               `https://twitter.com/${formData.username || formData.name.replace(/\s+/g, '')}`,
               'https://onlyfans.com/search/profiles',
-              'https://privacy.com/search/profiles'
+              'https://privacy.com/search/profiles',
+              `https://x.com/search?q=${encodeURIComponent(formData.name)}&lang=pt`,
+              'https://lattes.cnpq.br/',
+              `https://empresas.serasaexperian.com.br/busca-empresa/${encodeURIComponent(formData.name)}`,
+              `https://www.jusbrasil.com.br/busca?q=${encodeURIComponent(formData.name)}`
             ] : [])
           ],
           alerts: selectedPlan === 'complete' ? [
