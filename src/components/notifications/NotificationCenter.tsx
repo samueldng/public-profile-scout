@@ -189,29 +189,19 @@ export const NotificationCenter = () => {
 
     // Immediately show initial notifications to establish presence
     const initialNotificationsTimer = setTimeout(() => {
-      // Show 2 initial notifications to establish presence
+      // Show initial notification 3 seconds after page load as per requirements
       const notification1 = generateUserActivityNotification();
       setFloatingNotifications(prev => [notification1, ...prev.slice(0, 2)]);
       
       setTimeout(() => {
         setFloatingNotifications(prev => prev.filter(n => n.id !== notification1.id));
       }, 5000);
-      
-      // Show second notification after 1 second
-      setTimeout(() => {
-        const notification2 = generateUserActivityNotification();
-        setFloatingNotifications(prev => [notification2, ...prev.slice(0, 2)]);
-        
-        setTimeout(() => {
-          setFloatingNotifications(prev => prev.filter(n => n.id !== notification2.id));
-        }, 5000);
-      }, 1000);
-    }, 500); // Reduced from 1500ms to 500ms for faster initial notifications
+    }, 3000); // Show initial notification 3 seconds after page load
 
     // Generate user activity notifications frequently for social proof
     const userActivityInterval = setInterval(() => {
-      // 90% chance to show user activity notification (increased from 80%)
-      if (Math.random() > 0.1) {
+      // 70% chance to show user activity notification as per requirements
+      if (Math.random() > 0.3) {
         const notification = generateUserActivityNotification();
         setFloatingNotifications(prev => [notification, ...prev.slice(0, 2)]);
         
@@ -219,12 +209,12 @@ export const NotificationCenter = () => {
           setFloatingNotifications(prev => prev.filter(n => n.id !== notification.id));
         }, 5000);
       }
-    }, 3000); // Reduced from 4000ms to 3000ms for more frequent notifications
+    }, 5000); // Every 5 seconds as per requirements
 
     // Generate trust-building notifications less frequently
     const trustNotificationInterval = setInterval(() => {
-      // 50% chance to show trust notification (increased from 30%)
-      if (Math.random() > 0.5) {
+      // 30% chance to show trust notification
+      if (Math.random() > 0.7) {
         const notification = generateTrustNotification();
         setFloatingNotifications(prev => [notification, ...prev.slice(0, 2)]);
         
@@ -232,7 +222,7 @@ export const NotificationCenter = () => {
           setFloatingNotifications(prev => prev.filter(n => n.id !== notification.id));
         }, 5000);
       }
-    }, 8000); // Reduced from 12000ms to 8000ms for more frequent notifications
+    }, 15000); // Every 15 seconds for trust notifications
 
     return () => {
       supabase.removeChannel(channel);
