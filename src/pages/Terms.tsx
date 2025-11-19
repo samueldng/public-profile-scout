@@ -1,9 +1,12 @@
 import { motion } from 'framer-motion';
 import { Card } from '@/components/ui/card';
+import { Header } from '@/components/Header';
 
 const Terms = () => {
   return (
     <div className="min-h-screen bg-background">
+      <Header />
+      
       <div className="container mx-auto px-4 py-16 max-w-4xl">
         <motion.div
           initial={{ opacity: 0, y: 20 }}

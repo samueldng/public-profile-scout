@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Card } from '@/components/ui/card';
-import { Upload, Search, Loader2 } from 'lucide-react';
+import { Upload, Search, Loader2, AlertCircle } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -21,7 +21,10 @@ export const SearchForm = ({ selectedPlan = 'basic' }: SearchFormProps) => {
     name: '',
     username: '',
     city: '',
+    email: '',
+    phone: '',
   });
+  const [advancedOptions, setAdvancedOptions] = useState(false);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const navigate = useNavigate();
@@ -103,33 +106,107 @@ export const SearchForm = ({ selectedPlan = 'basic' }: SearchFormProps) => {
       // Simulate processing by updating status directly
       // In a real implementation, this would be done by the backend functions
       setTimeout(async () => {
-        // Create mock results
+        // Create comprehensive mock results with expanded data sources
         const mockResults = {
-          summary: `Encontrados 3 perfis públicos para "${formData.name}". Nenhum alerta detectado.`,
-          profiles: [
+          summary: `Análise completa realizada para "${formData.name}". Foram encontrados perfis em múltiplas plataformas.`,
+          totalProfilesFound: selectedPlan === 'complete' ? 12 : 5,
+          persons: [
             {
-              platform: 'LinkedIn',
               name: formData.name,
-              url: `https://linkedin.com/search/results/people/?keywords=${encodeURIComponent(formData.name)}`,
-              description: 'Perfil profissional'
-            },
-            {
-              platform: 'GitHub',
-              url: `https://github.com/${formData.username || formData.name.replace(/\s+/g, '')}`,
-              description: 'Perfil de desenvolvedor'
-            },
-            ...(selectedPlan === 'complete' ? [{
-              platform: 'Instagram',
-              url: `https://instagram.com/${formData.username || formData.name.replace(/\s+/g, '')}`,
-              description: 'Perfil social'
-            }] : [])
+              confidence: 95,
+              location: formData.city || 'Não especificado',
+              summary: 'Perfil principal identificado com alta confiança. Verificado em múltiplas fontes públicas.',
+              education: ['Bacharelado em Ciência da Computação - Universidade XYZ'],
+              experiences: ['Desenvolvedor Sênior - Empresa ABC (2020-Presente)', 'Analista de Sistemas - Empresa DEF (2018-2020)'],
+              profiles: [
+                {
+                  platform: 'LinkedIn',
+                  name: formData.name,
+                  url: `https://linkedin.com/search/results/people/?keywords=${encodeURIComponent(formData.name)}`,
+                  description: 'Perfil profissional',
+                  relevanceScore: 95
+                },
+                {
+                  platform: 'GitHub',
+                  url: `https://github.com/${formData.username || formData.name.replace(/\s+/g, '')}`,
+                  description: 'Perfil de desenvolvedor',
+                  relevanceScore: 88
+                },
+                ...(selectedPlan === 'complete' ? [
+                  {
+                    platform: 'Instagram',
+                    url: `https://instagram.com/${formData.username || formData.name.replace(/\s+/g, '')}`,
+                    description: 'Perfil social',
+                    relevanceScore: 82
+                  },
+                  {
+                    platform: 'Twitter',
+                    url: `https://twitter.com/${formData.username || formData.name.replace(/\s+/g, '')}`,
+                    description: 'Perfil no Twitter',
+                    relevanceScore: 78
+                  },
+                  {
+                    platform: 'OnlyFans (suspeito)',
+                    url: '#',
+                    description: 'Possível perfil adulto identificado',
+                    relevanceScore: 65
+                  },
+                  {
+                    platform: 'Privacy.com (suspeito)',
+                    url: '#',
+                    description: 'Possível perfil em plataforma de conteúdo adulto',
+                    relevanceScore: 60
+                  }
+                ] : [])
+              ]
+            }
           ],
+          rawData: {
+            governmentData: selectedPlan === 'complete' ? {
+              serasaScore: '750 (Bom)',
+              judicialRecords: 'Nenhum processo em andamento',
+              fiscalDebts: 'Nenhuma dívida ativa encontrada',
+              electoralData: 'Ficha limpa eleitoral'
+            } : null,
+            socialMedia: {
+              totalProfiles: selectedPlan === 'complete' ? 8 : 3,
+              platforms: selectedPlan === 'complete' ? 
+                ['LinkedIn', 'GitHub', 'Instagram', 'Twitter', 'Facebook', 'TikTok', 'OnlyFans (suspeito)', 'Privacy.com (suspeito)'] :
+                ['LinkedIn', 'GitHub', 'Instagram']
+            },
+            positiveData: [
+              'Presença profissional consistente',
+              'Histórico educacional verificado',
+              'Experiência de trabalho comprovada'
+            ],
+            negativeData: selectedPlan === 'complete' ? [
+              'Possível perfil em plataforma adulta',
+              'Alguns comentários controversos em redes sociais'
+            ] : [],
+            riskIndicators: selectedPlan === 'complete' ? [
+              'Baixo risco financeiro (score Serasa bom)',
+              'Risco reputacional moderado (conteúdo adulto)',
+              'Nenhum risco legal identificado'
+            ] : [
+              'Baixo risco financeiro (score Serasa bom)',
+              'Nenhum risco legal identificado'
+            ]
+          },
           rawLinks: [
             `https://www.google.com/search?q=${encodeURIComponent(formData.name + (formData.city ? ` ${formData.city}` : '') + (formData.username ? ` ${formData.username}` : ''))}`,
             `https://linkedin.com/search/results/people/?keywords=${encodeURIComponent(formData.name)}`,
-            `https://github.com/${formData.username || formData.name.replace(/\s+/g, '')}`
+            `https://github.com/${formData.username || formData.name.replace(/\s+/g, '')}`,
+            ...(selectedPlan === 'complete' ? [
+              `https://instagram.com/${formData.username || formData.name.replace(/\s+/g, '')}`,
+              `https://twitter.com/${formData.username || formData.name.replace(/\s+/g, '')}`,
+              'https://onlyfans.com/search/profiles',
+              'https://privacy.com/search/profiles'
+            ] : [])
           ],
-          alerts: [],
+          alerts: selectedPlan === 'complete' ? [
+            'Atenção: Possível perfil em plataforma adulta identificado',
+            'Recomendação: Verificar conteúdo antes de contato profissional'
+          ] : [],
           searchQuery: `${formData.name}${formData.city ? ` ${formData.city}` : ''}${formData.username ? ` ${formData.username}` : ''}`,
           timestamp: new Date().toISOString(),
           education: ['Bacharelado em Ciência da Computação - Universidade XYZ'],
@@ -224,6 +301,53 @@ export const SearchForm = ({ selectedPlan = 'basic' }: SearchFormProps) => {
               />
             </div>
 
+            <button
+              type="button"
+              className="text-sm text-primary hover:underline"
+              onClick={() => setAdvancedOptions(!advancedOptions)}
+            >
+              {advancedOptions ? 'Ocultar opções avançadas' : 'Mostrar opções avançadas'}
+            </button>
+
+            {advancedOptions && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                className="space-y-4 p-4 rounded-lg bg-muted/30 border border-border"
+              >
+                <div className="space-y-2">
+                  <Label htmlFor="email" className="text-foreground">Email (Opcional)</Label>
+                  <Input
+                    id="email"
+                    placeholder="Ex: joao@exemplo.com"
+                    className="bg-muted/50 border-border text-foreground"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    disabled={loading}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="phone" className="text-foreground">Telefone (Opcional)</Label>
+                  <Input
+                    id="phone"
+                    placeholder="Ex: (11) 99999-9999"
+                    className="bg-muted/50 border-border text-foreground"
+                    value={formData.phone}
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    disabled={loading}
+                  />
+                </div>
+
+                <div className="flex items-start space-x-2 p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/30">
+                  <AlertCircle className="w-5 h-5 text-yellow-500 mt-0.5 flex-shrink-0" />
+                  <p className="text-sm text-yellow-700">
+                    <strong>Aviso:</strong> Apenas dados públicos serão coletados. Não coletamos informações privadas ou restritas.
+                  </p>
+                </div>
+              </motion.div>
+            )}
+
           <div className="space-y-2">
             <Label className="text-foreground">Upload de Foto (Opcional)</Label>
             <div className="border-2 border-dashed border-border rounded-lg p-8 text-center hover:border-primary transition-colors cursor-pointer relative">
@@ -306,10 +430,18 @@ export const SearchForm = ({ selectedPlan = 'basic' }: SearchFormProps) => {
               ) : (
                 <>
                   <Search className="w-5 h-5 mr-2" />
-                  Iniciar Pesquisa - R$ {selectedPlan === 'basic' ? '4,90' : '14,90'}
+                  {selectedPlan === 'basic' 
+                    ? 'Iniciar Pesquisa - R$ 4,90' 
+                    : 'Iniciar Pesquisa Ilimitada'}
                 </>
               )}
             </Button>
+            
+            {selectedPlan === 'complete' && (
+              <p className="text-center text-sm text-muted-foreground mt-2">
+                Com assinatura R$ 14,90/mês - pesquisas ilimitadas
+              </p>
+            )}
           </div>
         </Card>
       </form>

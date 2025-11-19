@@ -3,9 +3,10 @@ import { useSearchParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ExternalLink, AlertTriangle, CheckCircle, User, Search, GraduationCap, Briefcase, FileText } from 'lucide-react';
+import { ExternalLink, AlertTriangle, CheckCircle, User, Search, GraduationCap, Briefcase, FileText, Shield, TrendingUp, TrendingDown, Eye } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { Header } from '@/components/Header';
 
 interface SearchResult {
   platform: string;
@@ -27,10 +28,27 @@ interface PersonProfile {
   summary?: string;
 }
 
+interface RawData {
+  governmentData?: {
+    serasaScore: string;
+    judicialRecords: string;
+    fiscalDebts: string;
+    electoralData: string;
+  };
+  socialMedia: {
+    totalProfiles: number;
+    platforms: string[];
+  };
+  positiveData: string[];
+  negativeData: string[];
+  riskIndicators: string[];
+}
+
 interface OSINTResult {
   summary: string;
   totalProfilesFound: number;
   persons: PersonProfile[];
+  rawData: RawData;
   rawLinks: string[];
   alerts: string[];
   searchQuery: string;
@@ -95,6 +113,7 @@ const Results = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
+        <Header />
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -129,6 +148,7 @@ const Results = () => {
   if (!results) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
+        <Header />
         <Card className="max-w-md">
           <CardHeader>
             <CardTitle>Nenhum resultado encontrado</CardTitle>
@@ -145,6 +165,8 @@ const Results = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
+      <Header />
+      
       <div className="container mx-auto px-4 py-8">
         <div className="mb-6">
           <Button variant="ghost" asChild>
@@ -180,6 +202,134 @@ const Results = () => {
                 </div>
               </div>
             )}
+
+            {/* Clean, Well-Divided Summary Section */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+              <Card className="border-green-500/30">
+                <CardHeader className="pb-2">
+                  <CardTitle className="flex items-center gap-2 text-green-600">
+                    <TrendingUp className="w-5 h-5" />
+                    Dados Positivos
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ul className="space-y-2">
+                    {results.rawData.positiveData.map((item, index) => (
+                      <li key={index} className="flex items-start gap-2">
+                        <CheckCircle className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
+                        <span className="text-sm">{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </CardContent>
+              </Card>
+
+              <Card className="border-red-500/30">
+                <CardHeader className="pb-2">
+                  <CardTitle className="flex items-center gap-2 text-red-600">
+                    <TrendingDown className="w-5 h-5" />
+                    Dados Negativos
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ul className="space-y-2">
+                    {results.rawData.negativeData.length > 0 ? (
+                      results.rawData.negativeData.map((item, index) => (
+                        <li key={index} className="flex items-start gap-2">
+                          <AlertTriangle className="w-4 h-4 text-red-500 mt-0.5 flex-shrink-0" />
+                          <span className="text-sm">{item}</span>
+                        </li>
+                      ))
+                    ) : (
+                      <li className="flex items-start gap-2">
+                        <CheckCircle className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
+                        <span className="text-sm">Nenhum dado negativo identificado</span>
+                      </li>
+                    )}
+                  </ul>
+                </CardContent>
+              </Card>
+
+              <Card className="border-blue-500/30">
+                <CardHeader className="pb-2">
+                  <CardTitle className="flex items-center gap-2 text-blue-600">
+                    <Shield className="w-5 h-5" />
+                    Indicadores de Risco
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ul className="space-y-2">
+                    {results.rawData.riskIndicators.map((item, index) => (
+                      <li key={index} className="flex items-start gap-2">
+                        <Eye className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" />
+                        <span className="text-sm">{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Government Data Section */}
+            {results.rawData.governmentData && (
+              <Card className="mb-6">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Shield className="w-5 h-5" />
+                    Dados Governamentais
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <h4 className="font-semibold mb-2">Serasa</h4>
+                      <p className="text-sm">{results.rawData.governmentData.serasaScore}</p>
+                    </div>
+                    <div>
+                      <h4 className="font-semibold mb-2">Registros Judiciais</h4>
+                      <p className="text-sm">{results.rawData.governmentData.judicialRecords}</p>
+                    </div>
+                    <div>
+                      <h4 className="font-semibold mb-2">Dívidas Fiscais</h4>
+                      <p className="text-sm">{results.rawData.governmentData.fiscalDebts}</p>
+                    </div>
+                    <div>
+                      <h4 className="font-semibold mb-2">Dados Eleitorais</h4>
+                      <p className="text-sm">{results.rawData.governmentData.electoralData}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Social Media Section */}
+            <Card className="mb-6">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <User className="w-5 h-5" />
+                  Perfis em Redes Sociais
+                </CardTitle>
+                <CardDescription>
+                  {results.rawData.socialMedia.totalProfiles} perfis encontrados
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-wrap gap-2">
+                  {results.rawData.socialMedia.platforms.map((platform, index) => (
+                    <span 
+                      key={index} 
+                      className={`px-3 py-1 rounded-full text-xs font-medium ${
+                        platform.includes('(suspeito)') 
+                          ? 'bg-red-100 text-red-800 border border-red-300' 
+                          : 'bg-blue-100 text-blue-800 border border-blue-300'
+                      }`}
+                    >
+                      {platform}
+                    </span>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
 
             {results.persons && results.persons.length > 0 && (
               <div className="mb-6">

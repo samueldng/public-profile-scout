@@ -4,6 +4,7 @@ import { Hero3D } from '@/components/Hero3D';
 import { PricingCard } from '@/components/PricingCard';
 import { Shield, Zap, Eye, Search } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { Header } from '@/components/Header';
 
 const Index = () => {
   const pricingPlans = [
@@ -22,22 +23,25 @@ const Index = () => {
     {
       title: 'Pesquisa Completa',
       price: 'R$ 14,90',
-      description: 'Análise profunda e detalhada',
+      description: 'Análise profunda e ilimitada',
       features: [
-        'Tudo da Pesquisa Básica',
+        'Pesquisas ilimitadas por mês',
         'Busca reversa de imagem',
         'Análise de múltiplas plataformas',
         'Indicadores de alerta',
-        'Relatório PDF detalhado',
+        'Relatórios PDF detalhados',
         'Verificação de consistência',
         'Histórico de menções',
       ],
       popular: true,
+      isSubscription: true,
     },
   ];
 
   return (
     <div className="min-h-screen bg-background">
+      <Header />
+      
       {/* Hero Section */}
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
         <Hero3D />
@@ -187,7 +191,7 @@ const Index = () => {
               Escolha seu <span className="text-primary text-glow">Plano</span>
             </h2>
             <p className="text-xl text-muted-foreground">
-              Pague apenas pelo que precisa. Sem assinaturas.
+              Planos flexíveis para suas necessidades
             </p>
           </motion.div>
 

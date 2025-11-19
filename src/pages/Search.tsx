@@ -4,34 +4,15 @@ import { Shield, Lock, Eye, Search as SearchIcon } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
+import { Header } from '@/components/Header';
 
 const Search = () => {
   const [selectedPlan, setSelectedPlan] = useState<'basic' | 'complete'>('basic');
-  const [dbTest, setDbTest] = useState<string>('');
-
-  // Test database connection
-  useEffect(() => {
-    const testDbConnection = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('search_jobs')
-          .select('count()', { count: 'exact' });
-        
-        if (error) {
-          setDbTest(`DB Error: ${error.message}`);
-        } else {
-          setDbTest(`DB Connected. Jobs count: ${data?.[0]?.count || 0}`);
-        }
-      } catch (err) {
-        setDbTest(`DB Test Failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
-      }
-    };
-    
-    testDbConnection();
-  }, []);
 
   return (
     <div className="min-h-screen bg-background cyber-grid">
+      <Header />
+      
       <div className="container mx-auto px-4 py-16">
         <motion.div
           initial={{ opacity: 0, y: -20 }}
@@ -48,9 +29,6 @@ const Search = () => {
           </motion.h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
             Pesquise informações públicas de forma rápida, ética e legal
-          </p>
-          <p className="text-sm text-muted-foreground mt-2">
-            Status: {dbTest}
           </p>
         </motion.div>
 
@@ -88,7 +66,7 @@ const Search = () => {
                 )}
                 <span className="text-lg font-bold">Pesquisa Básica</span>
                 <span className="text-2xl font-bold mt-2">R$ 4,90</span>
-                <span className="text-sm mt-1 opacity-80">Redes sociais + busca</span>
+                <span className="text-sm mt-1 opacity-80">Por pesquisa</span>
               </Button>
             </motion.div>
             <motion.div
@@ -114,7 +92,7 @@ const Search = () => {
                 )}
                 <span className="text-lg font-bold">Pesquisa Completa</span>
                 <span className="text-2xl font-bold mt-2">R$ 14,90</span>
-                <span className="text-sm mt-1 opacity-80">Busca reversa + alertas</span>
+                <span className="text-sm mt-1 opacity-80">Por mês (ilimitado)</span>
               </Button>
             </motion.div>
           </div>

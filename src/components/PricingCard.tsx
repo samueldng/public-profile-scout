@@ -10,6 +10,7 @@ interface PricingCardProps {
   features: string[];
   popular?: boolean;
   onClick?: () => void;
+  isSubscription?: boolean;
 }
 
 export const PricingCard = ({
@@ -19,6 +20,7 @@ export const PricingCard = ({
   features,
   popular,
   onClick,
+  isSubscription = false,
 }: PricingCardProps) => {
   return (
     <motion.div
@@ -42,7 +44,9 @@ export const PricingCard = ({
         
         <div className="mb-6">
           <span className="text-5xl font-bold text-primary text-glow">{price}</span>
-          <span className="text-muted-foreground ml-2">/ pesquisa</span>
+          <span className="text-muted-foreground ml-2">
+            {isSubscription ? '/ mês' : '/ pesquisa'}
+          </span>
         </div>
 
         <ul className="space-y-3 mb-8">
@@ -65,7 +69,7 @@ export const PricingCard = ({
           size="lg"
           onClick={onClick}
         >
-          Começar Pesquisa
+          {isSubscription ? 'Assinar Agora' : 'Começar Pesquisa'}
         </Button>
       </Card>
     </motion.div>
