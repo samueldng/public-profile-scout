@@ -177,298 +177,329 @@ const Results = () => {
           </Button>
         </div>
 
-        <Card className="mb-8">
+        {/* HEADER: METADATA DA PESQUISA */}
+        <Card className="mb-6 border-primary/20">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <CheckCircle className="w-6 h-6 text-green-500" />
-              Resultados da Busca OSINT
+            <CardTitle className="flex items-center gap-2 text-2xl">
+              <Search className="w-6 h-6 text-primary" />
+              🔎 Relatório de Análise OSINT
             </CardTitle>
-            <CardDescription>
-              Pesquisa: {results.searchQuery} | {results.totalProfilesFound} referências encontradas
+            <CardDescription className="text-base">
+              <div className="space-y-1 mt-2">
+                <div><strong>Pesquisa:</strong> {results.searchQuery}</div>
+                <div><strong>Data/Hora:</strong> {new Date(results.timestamp).toLocaleString('pt-BR')}</div>
+                <div><strong>Fontes Consultadas:</strong> {results.rawLinks.length} referências públicas</div>
+                <div><strong>Fontes com Dados Extraídos:</strong> {results.totalProfilesFound}</div>
+              </div>
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <p className="text-muted-foreground mb-6">{results.summary}</p>
+            <div className="bg-muted/50 p-4 rounded-lg">
+              <h4 className="font-semibold mb-2">📋 Resumo Executivo:</h4>
+              <p className="text-sm text-muted-foreground">{results.summary}</p>
+            </div>
+          </CardContent>
+        </Card>
             
+            {/* ALERTAS E AVISOS */}
             {results.alerts && results.alerts.length > 0 && (
-              <div className="mb-6">
-                <h3 className="text-lg font-semibold mb-2 flex items-center gap-2">
-                  <AlertTriangle className="w-5 h-5 text-destructive" />
-                  Alertas
-                </h3>
-                <div className="space-y-2">
-                  {results.alerts.map((alert: string, index: number) => (
-                    <div key={index} className="bg-destructive/10 text-destructive p-3 rounded-lg">
-                      {alert}
-                    </div>
-                  ))}
-                </div>
-              </div>
+              <Card className="mb-6 border-yellow-500/30">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-yellow-600">
+                    <AlertTriangle className="w-5 h-5" />
+                    ⚠️ Alertas e Limitações da Análise
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    {results.alerts.map((alert: string, index: number) => (
+                      <div key={index} className="flex items-start gap-2 bg-yellow-50 dark:bg-yellow-950/20 p-3 rounded-lg">
+                        <AlertTriangle className="w-4 h-4 text-yellow-600 mt-0.5 flex-shrink-0" />
+                        <span className="text-sm">{alert}</span>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
             )}
 
-            {/* Clean, Well-Divided Summary Section */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-              <Card className="border-green-500/30">
-                <CardHeader className="pb-2">
-                  <CardTitle className="flex items-center gap-2 text-green-600">
-                    <TrendingUp className="w-5 h-5" />
-                    Dados Positivos
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <ul className="space-y-2">
-                    {results.rawData.positiveData.map((item, index) => (
-                      <li key={index} className="flex items-start gap-2">
-                        <CheckCircle className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
-                        <span className="text-sm">{item}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </CardContent>
-              </Card>
+            {/* NOTA: Removida seção de "Dados Positivos/Negativos/Risco" e "Dados Governamentais" 
+                 pois esses são dados fictícios não extraídos de fontes reais */}
 
-              <Card className="border-red-500/30">
-                <CardHeader className="pb-2">
-                  <CardTitle className="flex items-center gap-2 text-red-600">
-                    <TrendingDown className="w-5 h-5" />
-                    Dados Negativos
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <ul className="space-y-2">
-                    {results.rawData.negativeData.length > 0 ? (
-                      results.rawData.negativeData.map((item, index) => (
-                        <li key={index} className="flex items-start gap-2">
-                          <AlertTriangle className="w-4 h-4 text-red-500 mt-0.5 flex-shrink-0" />
-                          <span className="text-sm">{item}</span>
-                        </li>
-                      ))
-                    ) : (
-                      <li className="flex items-start gap-2">
-                        <CheckCircle className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
-                        <span className="text-sm">Nenhum dado negativo identificado</span>
-                      </li>
-                    )}
-                  </ul>
-                </CardContent>
-              </Card>
-
-              <Card className="border-blue-500/30">
-                <CardHeader className="pb-2">
-                  <CardTitle className="flex items-center gap-2 text-blue-600">
-                    <Shield className="w-5 h-5" />
-                    Indicadores de Risco
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <ul className="space-y-2">
-                    {results.rawData.riskIndicators.map((item, index) => (
-                      <li key={index} className="flex items-start gap-2">
-                        <Eye className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" />
-                        <span className="text-sm">{item}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Government Data Section */}
-            {results.rawData.governmentData && (
+            {/* Social Media Section */}
+            {results.rawData && results.rawData.socialMedia && results.rawData.socialMedia.platforms && results.rawData.socialMedia.platforms.length > 0 && (
               <Card className="mb-6">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <Shield className="w-5 h-5" />
-                    Dados Governamentais
+                    <User className="w-5 h-5" />
+                    🌐 Plataformas Consultadas
                   </CardTitle>
+                  <CardDescription>
+                    {results.rawData.socialMedia.totalProfiles || results.rawLinks.length} fontes públicas verificadas
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <h4 className="font-semibold mb-2">Serasa</h4>
-                      <p className="text-sm">{results.rawData.governmentData.serasaScore}</p>
-                    </div>
-                    <div>
-                      <h4 className="font-semibold mb-2">Registros Judiciais</h4>
-                      <p className="text-sm">{results.rawData.governmentData.judicialRecords}</p>
-                    </div>
-                    <div>
-                      <h4 className="font-semibold mb-2">Dívidas Fiscais</h4>
-                      <p className="text-sm">{results.rawData.governmentData.fiscalDebts}</p>
-                    </div>
-                    <div>
-                      <h4 className="font-semibold mb-2">Dados Eleitorais</h4>
-                      <p className="text-sm">{results.rawData.governmentData.electoralData}</p>
-                    </div>
+                  <div className="flex flex-wrap gap-2">
+                    {results.rawData.socialMedia.platforms.map((platform, index) => (
+                      <span 
+                        key={index} 
+                        className="px-3 py-1 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 border border-blue-300 dark:border-blue-700"
+                      >
+                        {platform}
+                      </span>
+                    ))}
                   </div>
                 </CardContent>
               </Card>
             )}
 
-            {/* Social Media Section */}
-            <Card className="mb-6">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <User className="w-5 h-5" />
-                  Perfis em Redes Sociais
-                </CardTitle>
-                <CardDescription>
-                  {results.rawData.socialMedia.totalProfiles} perfis encontrados
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-wrap gap-2">
-                  {results.rawData.socialMedia.platforms.map((platform, index) => (
-                    <span 
-                      key={index} 
-                      className={`px-3 py-1 rounded-full text-xs font-medium ${
-                        platform.includes('(suspeito)') 
-                          ? 'bg-red-100 text-red-800 border border-red-300' 
-                          : 'bg-blue-100 text-blue-800 border border-blue-300'
-                      }`}
-                    >
-                      {platform}
-                    </span>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
+            {/* SEÇÃO PRINCIPAL: PERFIS IDENTIFICADOS */}
             {results.persons && results.persons.length > 0 && (
-              <div className="mb-6">
-                <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                  <User className="w-5 h-5" />
-                  Perfis Identificados ({results.persons.length})
-                </h3>
-                
-                {results.persons.length > 1 && (
-                  <div className="mb-4 flex gap-2 flex-wrap">
-                    {results.persons.map((person: PersonProfile, index: number) => (
-                      <button
-                        key={index}
-                        onClick={() => setSelectedPerson(index)}
-                        className={`px-4 py-2 rounded-lg transition-colors ${
-                          selectedPerson === index
-                            ? 'bg-primary text-primary-foreground'
-                            : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
-                        }`}
-                      >
-                        {person.name} ({person.confidence}% confiança)
-                      </button>
-                    ))}
-                  </div>
-                )}
+              <Card className="mb-6">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-xl">
+                    <User className="w-6 h-6" />
+                    👤 Perfis Identificados
+                  </CardTitle>
+                  <CardDescription>
+                    {results.persons.length === 1 
+                      ? 'Um perfil foi identificado com base nas fontes consultadas'
+                      : `${results.persons.length} perfis diferentes foram identificados (possíveis homônimos ou pessoas distintas)`
+                    }
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {/* MENU DE NAVEGAÇÃO ENTRE PERFIS */}
+                  {results.persons.length > 1 && (
+                    <div className="mb-6 p-4 bg-muted/30 rounded-lg">
+                      <h4 className="text-sm font-semibold mb-3 text-muted-foreground">
+                        Selecione um perfil para visualizar:
+                      </h4>
+                      <div className="flex gap-2 flex-wrap">
+                        {results.persons.map((person: PersonProfile, index: number) => {
+                          const confidenceColor = person.confidence >= 70 
+                            ? 'border-green-500 bg-green-50 dark:bg-green-950/20' 
+                            : person.confidence >= 40 
+                            ? 'border-yellow-500 bg-yellow-50 dark:bg-yellow-950/20'
+                            : 'border-red-500 bg-red-50 dark:bg-red-950/20';
+                          
+                          return (
+                            <button
+                              key={index}
+                              onClick={() => setSelectedPerson(index)}
+                              className={`px-4 py-3 rounded-lg transition-all border-2 ${
+                                selectedPerson === index
+                                  ? 'bg-primary text-primary-foreground border-primary scale-105'
+                                  : `${confidenceColor} hover:scale-102`
+                              }`}
+                            >
+                              <div className="text-left">
+                                <div className="font-semibold">Perfil {index + 1}</div>
+                                <div className="text-xs opacity-80">
+                                  {person.name}
+                                </div>
+                                <div className="text-xs mt-1">
+                                  Confiança: {person.confidence}%
+                                </div>
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
 
-                {results.persons[selectedPerson] && (
-                  <div className="space-y-6">
-                    <Card>
-                      <CardHeader>
-                        <CardTitle>{results.persons[selectedPerson].name}</CardTitle>
-                        <CardDescription>
-                          Confiança: {results.persons[selectedPerson].confidence}% | 
-                          Localização: {results.persons[selectedPerson].location || 'Não especificado'}
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        <p className="text-muted-foreground mb-4">
-                          {results.persons[selectedPerson].summary}
-                        </p>
-
-                        {results.persons[selectedPerson].education && results.persons[selectedPerson].education!.length > 0 && (
-                          <div className="mb-4">
-                            <h4 className="font-semibold mb-2 flex items-center gap-2">
-                              <GraduationCap className="w-4 h-4" />
-                              Educação
-                            </h4>
-                            <ul className="list-disc list-inside space-y-1">
-                              {results.persons[selectedPerson].education!.map((edu: string, idx: number) => (
-                                <li key={idx} className="text-sm text-muted-foreground">{edu}</li>
-                              ))}
-                            </ul>
+                  {/* EXIBIÇÃO DO PERFIL SELECIONADO */}
+                  {results.persons[selectedPerson] && (
+                    <div className="space-y-6">
+                      {/* Informações Básicas */}
+                      <div className="bg-gradient-to-r from-primary/5 to-secondary/5 p-6 rounded-lg border">
+                        <div className="flex items-start justify-between mb-4">
+                          <div>
+                            <h3 className="text-2xl font-bold">{results.persons[selectedPerson].name}</h3>
+                            {results.persons[selectedPerson].username && (
+                              <p className="text-sm text-muted-foreground mt-1">
+                                @{results.persons[selectedPerson].username}
+                              </p>
+                            )}
                           </div>
+                          <div className="text-right">
+                            <div className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${
+                              results.persons[selectedPerson].confidence >= 70
+                                ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
+                                : results.persons[selectedPerson].confidence >= 40
+                                ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300'
+                                : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300'
+                            }`}>
+                              Confiança: {results.persons[selectedPerson].confidence}%
+                            </div>
+                          </div>
+                        </div>
+
+                        {results.persons[selectedPerson].location && (
+                          <p className="text-sm mb-2">
+                            📍 <strong>Localização:</strong> {results.persons[selectedPerson].location}
+                          </p>
                         )}
 
-                        {results.persons[selectedPerson].experiences && results.persons[selectedPerson].experiences!.length > 0 && (
-                          <div className="mb-4">
-                            <h4 className="font-semibold mb-2 flex items-center gap-2">
-                              <Briefcase className="w-4 h-4" />
-                              Experiências
-                            </h4>
-                            <ul className="list-disc list-inside space-y-1">
-                              {results.persons[selectedPerson].experiences!.map((exp: string, idx: number) => (
-                                <li key={idx} className="text-sm text-muted-foreground">{exp}</li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-                      </CardContent>
-                    </Card>
-
-                    {results.persons[selectedPerson].profiles && results.persons[selectedPerson].profiles.length > 0 && (
-                      <div>
-                        <h4 className="font-semibold mb-3">Perfis e Referências Online</h4>
-                        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                          {results.persons[selectedPerson].profiles.map((profile: SearchResult, idx: number) => (
-                            <Card key={idx}>
-                              <CardHeader>
-                                <CardTitle className="text-base">{profile.platform}</CardTitle>
-                                {profile.relevanceScore && (
-                                  <CardDescription>
-                                    Relevância: {profile.relevanceScore}%
-                                  </CardDescription>
-                                )}
-                              </CardHeader>
-                              <CardContent>
-                                {profile.title && (
-                                  <p className="text-sm font-medium mb-1">{profile.title}</p>
-                                )}
-                                <p className="text-sm text-muted-foreground mb-2">
-                                  {profile.description}
-                                </p>
-                                <a
-                                  href={profile.url}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="text-primary hover:underline flex items-center gap-1 text-sm"
-                                >
-                                  Acessar perfil
-                                  <ExternalLink className="w-3 h-3" />
-                                </a>
-                              </CardContent>
-                            </Card>
-                          ))}
+                        <div className="mt-4 p-4 bg-background/50 rounded border">
+                          <h4 className="font-semibold mb-2 text-sm text-muted-foreground">Resumo / Biografia:</h4>
+                          <p className="text-sm">{results.persons[selectedPerson].summary || 'Informações insuficientes.'}</p>
                         </div>
                       </div>
-                    )}
-                  </div>
-                )}
-              </div>
+
+                      {/* Educação */}
+                      {results.persons[selectedPerson].education && results.persons[selectedPerson].education!.length > 0 && (
+                        <Card>
+                          <CardHeader>
+                            <CardTitle className="flex items-center gap-2 text-base">
+                              <GraduationCap className="w-5 h-5" />
+                              🎓 Formação Acadêmica
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <ul className="space-y-2">
+                              {results.persons[selectedPerson].education!.map((edu: string, idx: number) => (
+                                <li key={idx} className="flex items-start gap-2">
+                                  <CheckCircle className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
+                                  <span className="text-sm">{edu}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </CardContent>
+                        </Card>
+                      )}
+
+                      {/* Experiências */}
+                      {results.persons[selectedPerson].experiences && results.persons[selectedPerson].experiences!.length > 0 && (
+                        <Card>
+                          <CardHeader>
+                            <CardTitle className="flex items-center gap-2 text-base">
+                              <Briefcase className="w-5 h-5" />
+                              💼 Experiência Profissional
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <ul className="space-y-2">
+                              {results.persons[selectedPerson].experiences!.map((exp: string, idx: number) => (
+                                <li key={idx} className="flex items-start gap-2">
+                                  <CheckCircle className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
+                                  <span className="text-sm">{exp}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </CardContent>
+                        </Card>
+                      )}
+
+                      {/* Perfis Online */}
+                      {results.persons[selectedPerson].profiles && results.persons[selectedPerson].profiles.length > 0 && (
+                        <Card>
+                          <CardHeader>
+                            <CardTitle className="flex items-center gap-2 text-base">
+                              <ExternalLink className="w-5 h-5" />
+                              🔗 Perfis e Referências Online
+                            </CardTitle>
+                            <CardDescription>
+                              {results.persons[selectedPerson].profiles.length} referência(s) associada(s) a este perfil
+                            </CardDescription>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                              {results.persons[selectedPerson].profiles.map((profile: SearchResult, idx: number) => (
+                                <Card key={idx} className="border-primary/20">
+                                  <CardHeader className="pb-3">
+                                    <CardTitle className="text-sm font-semibold">{profile.platform}</CardTitle>
+                                    {profile.relevanceScore && (
+                                      <CardDescription className="text-xs">
+                                        Relevância: {profile.relevanceScore}%
+                                      </CardDescription>
+                                    )}
+                                  </CardHeader>
+                                  <CardContent className="space-y-2">
+                                    {profile.title && (
+                                      <p className="text-sm font-medium">{profile.title}</p>
+                                    )}
+                                    {profile.description && (
+                                      <p className="text-xs text-muted-foreground">{profile.description}</p>
+                                    )}
+                                    <a
+                                      href={profile.url}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="inline-flex items-center gap-1 text-xs text-primary hover:underline font-medium"
+                                    >
+                                      Acessar link
+                                      <ExternalLink className="w-3 h-3" />
+                                    </a>
+                                  </CardContent>
+                                </Card>
+                              ))}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      )}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
             )}
 
+            {/* SEÇÃO DE REFERÊNCIAS COMPLETAS */}
             {results.rawLinks && results.rawLinks.length > 0 && (
-              <div>
-                <h3 className="text-lg font-semibold mb-2 flex items-center gap-2">
-                  <FileText className="w-5 h-5" />
-                  Todas as Referências ({results.rawLinks.length})
-                </h3>
-                <div className="space-y-2 max-h-60 overflow-y-auto bg-muted/50 p-4 rounded-lg">
-                  {results.rawLinks.map((link: string, index: number) => (
-                    <a
-                      key={index}
-                      href={link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="block text-sm text-primary hover:underline flex items-center gap-1"
-                    >
-                      <ExternalLink className="w-3 h-3" />
-                      {link}
-                    </a>
-                  ))}
-                </div>
-              </div>
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <FileText className="w-5 h-5" />
+                    📚 Todas as Referências Consultadas
+                  </CardTitle>
+                  <CardDescription>
+                    {results.rawLinks.length} fonte(s) pública(s) verificada(s) nesta análise
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2 max-h-96 overflow-y-auto bg-muted/30 p-4 rounded-lg border">
+                    {results.rawLinks.map((link: string, index: number) => {
+                      // Identificar plataforma pelo URL
+                      let platform = 'Web';
+                      let icon = '🌐';
+                      if (link.includes('linkedin')) { platform = 'LinkedIn'; icon = '💼'; }
+                      else if (link.includes('github')) { platform = 'GitHub'; icon = '💻'; }
+                      else if (link.includes('instagram')) { platform = 'Instagram'; icon = '📷'; }
+                      else if (link.includes('twitter') || link.includes('x.com')) { platform = 'Twitter/X'; icon = '🐦'; }
+                      else if (link.includes('lattes') || link.includes('cnpq')) { platform = 'Lattes'; icon = '🎓'; }
+                      else if (link.includes('jusbrasil')) { platform = 'JusBrasil'; icon = '⚖️'; }
+                      
+                      return (
+                        <div key={index} className="flex items-center gap-3 p-2 hover:bg-background/50 rounded transition-colors">
+                          <span className="text-xl">{icon}</span>
+                          <div className="flex-1 min-w-0">
+                            <div className="text-xs font-semibold text-muted-foreground mb-1">{platform}</div>
+                            <a
+                              href={link}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-sm text-primary hover:underline flex items-center gap-1 truncate"
+                            >
+                              <ExternalLink className="w-3 h-3 flex-shrink-0" />
+                              <span className="truncate">{link}</span>
+                            </a>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  
+                  <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-950/20 rounded border border-blue-200 dark:border-blue-800">
+                    <p className="text-xs text-blue-800 dark:text-blue-300">
+                      <strong>ℹ️ Nota:</strong> Todas as informações apresentadas neste relatório foram extraídas 
+                      exclusivamente das fontes listadas acima. Dados não verificáveis foram marcados como 
+                      "Não encontrado" ou omitidos.
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
             )}
-          </CardContent>
-        </Card>
       </div>
     </div>
   );

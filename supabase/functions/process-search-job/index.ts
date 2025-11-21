@@ -305,55 +305,77 @@ Agora processe os dados em MODO STRICT-EXTRACT.`;
     } catch (parseError) {
       console.error('Failed to parse AI response:', parseError);
       
-      // Fallback: create minimal STRICT structure
+      // Fallback HONESTO: create minimal structure WITHOUT fictional data
       const extractionSummary = extractedData.length > 0 
         ? `${extractedData.length} fonte(s) acessada(s): ${extractedData.map(d => d.platform).join(', ')}`
-        : 'Nenhum conteúdo foi extraído (possível bloqueio de scraping)';
+        : 'Nenhum conteúdo foi extraído (bloqueio de scraping detectado)';
       
       analysisResult = {
         rawExtractions: extractedData.map(d => ({
           sourceUrl: d.url,
           platform: d.platform,
           extractedData: {
-            name: 'Não encontrado',
+            name: 'Extração falhou',
             username: null,
-            bio: 'Não encontrado',
-            location: 'Não encontrado',
-            occupation: 'Não encontrado',
+            bio: 'Conteúdo HTML não pôde ser processado',
+            location: 'Não extraído',
+            occupation: 'Não extraído',
             photoUrl: null,
             additionalLinks: [],
-            rawText: d.content.substring(0, 500)
+            rawText: d.content.substring(0, 200) + '... [conteúdo HTML bruto]'
           }
         })),
         persons: [{
-          profileId: 'A',
+          profileId: 'UNVERIFIED',
           name: query,
           username: username || null,
-          confidence: 'Baixa: apenas nome da busca',
-          location: city || 'Não encontrado',
-          occupation: 'Não encontrado',
-          bio: 'Não encontrado',
+          confidence: 'Muito Baixa: falha na análise da IA',
+          location: city || undefined,
+          occupation: undefined,
+          bio: `⚠️ ANÁLISE FALHOU: A IA não conseguiu processar o conteúdo extraído. ${extractionSummary}. Recomenda-se verificação manual dos links.`,
           photoUrl: null,
-          education: [],
-          experiences: [],
-          socialProfiles: extractedData.map(d => d.url),
-          sourceLinks: extractedData.map(d => d.url),
-          groupingEvidence: 'Nenhuma evidência - apenas nome da busca'
+          education: [], // NUNCA preencher
+          experiences: [], // NUNCA preencher
+          socialProfiles: rawLinks,
+          sourceLinks: rawLinks,
+          groupingEvidence: 'Falha no processamento automático - verificação manual necessária'
         }],
         alerts: [
+          '🚨 ERRO: Falha na análise automática dos dados',
           `Total de fontes buscadas: ${rawLinks.length}`,
           `Fontes com conteúdo extraído: ${extractedData.length}`,
-          extractedData.length === 0 ? '⚠️ Nenhum conteúdo extraído - possível bloqueio' : '',
-          'Análise automática com limitações de parsing'
+          extractedData.length === 0 ? '⚠️ Nenhum conteúdo extraído - bloqueio de scraping confirmado' : '',
+          '⚠️ Recomenda-se verificação manual dos links abaixo'
         ].filter(Boolean),
-        generalSummary: `Busca por "${query}". ${extractionSummary}. Dados limitados devido a restrições de scraping.`
+        generalSummary: `❌ BUSCA LIMITADA para "${query}". ${extractionSummary}. A análise automática falhou. Por favor, verifique manualmente os links fornecidos para informações detalhadas.`
       };
     }
 
-    // Map AI analysis to PersonProfile structure
+    // 🚨 VALIDAÇÃO RIGOROSA: Remove dados fictícios da IA
+    const validateField = (field: any): any => {
+      if (!field) return undefined;
+      if (Array.isArray(field)) return field.length > 0 ? field : [];
+      const fieldStr = String(field).toLowerCase();
+      // Lista de termos que indicam dados fictícios/genéricos
+      const ficticiousIndicators = [
+        'universidade xyz', 'universidade abc', 'empresa abc', 'empresa def',
+        'xyz company', 'abc company', 'não encontrado', 'não especificado',
+        'informações insuficientes', 'dados não disponíveis'
+      ];
+      
+      for (const indicator of ficticiousIndicators) {
+        if (fieldStr.includes(indicator)) {
+          return undefined; // Remove campo com dados fictícios
+        }
+      }
+      
+      return field;
+    };
+
+    // Map AI analysis to PersonProfile structure WITH STRICT VALIDATION
     const persons: PersonProfile[] = (analysisResult.persons || []).map((person: any) => {
       // Convert confidence string to number for internal use
-      let confidenceNum = 50;
+      let confidenceNum = 20; // Baixíssima confiança por padrão
       if (person.confidence) {
         const confStr = person.confidence.toLowerCase();
         if (confStr.includes('alta')) confidenceNum = 85;
@@ -361,43 +383,86 @@ Agora processe os dados em MODO STRICT-EXTRACT.`;
         else if (confStr.includes('baixa')) confidenceNum = 30;
       }
       
+      // Validar e limpar educação
+      const validatedEducation = (person.education || [])
+        .map(validateField)
+        .filter((e: any) => e !== undefined);
+      
+      // Validar e limpar experiências
+      const validatedExperiences = (person.experiences || [])
+        .map(validateField)
+        .filter((e: any) => e !== undefined);
+      
+      // Validar localização
+      const validatedLocation = validateField(person.location);
+      
+      // Validar ocupação
+      const validatedOccupation = validateField(person.occupation);
+      
+      // Se não há dados reais, baixar confiança drasticamente
+      const hasRealData = validatedEducation.length > 0 || 
+                          validatedExperiences.length > 0 || 
+                          validatedLocation || 
+                          validatedOccupation;
+      
+      if (!hasRealData && confidenceNum > 30) {
+        confidenceNum = 20; // Forçar baixa confiança se não há dados reais
+      }
+      
       return {
         name: person.name || query,
         username: person.username || undefined,
         confidence: confidenceNum,
-        location: person.location === 'Não encontrado' ? undefined : (person.location || city),
-        summary: person.bio || person.groupingEvidence || 'Informações insuficientes',
-        education: person.education || [],
-        experiences: person.experiences || [],
+        location: validatedLocation || undefined,
+        summary: validatedEducation.length === 0 && validatedExperiences.length === 0 
+          ? `Apenas referências públicas encontradas. Nenhuma informação detalhada extraída das ${extractedData.length} fonte(s) consultada(s).`
+          : (person.bio || person.groupingEvidence || 'Perfil identificado em fontes públicas'),
+        education: validatedEducation,
+        experiences: validatedExperiences,
         recentActivities: person.recentActivities || [],
         sourceLinks: person.sourceLinks || [],
-        profiles: (person.socialProfiles || []).map((url: string) => ({
-          platform: extractedData.find(d => d.url === url)?.platform || 'Referência',
-          url,
-          name: person.name || query,
-          description: person.occupation !== 'Não encontrado' ? person.occupation : 'Perfil identificado'
-        }))
+        profiles: (person.socialProfiles || rawLinks.slice(0, 5)).map((url: string) => {
+          const source = extractedData.find(d => d.url === url);
+          return {
+            platform: source?.platform || 'Referência de Busca',
+            url,
+            name: person.name || query,
+            description: validatedOccupation || 'Link de pesquisa pública'
+          };
+        })
       };
     });
 
-    // If no persons identified, create default STRICT one
+    // If no persons identified, create HONEST minimal profile
     if (persons.length === 0) {
+      alerts.push('⚠️ ATENÇÃO: Nenhuma informação detalhada foi extraída das fontes consultadas');
+      alerts.push('As plataformas consultadas podem estar bloqueando acesso automatizado');
+      
       persons.push({
         name: query,
         username: username,
-        confidence: 20,
-        location: city || 'Não encontrado',
+        confidence: 15, // Confiança muito baixa
+        location: city || undefined,
         summary: extractedData.length > 0 
-          ? `${extractedData.length} referência(s) acessada(s) mas nenhuma informação útil extraída`
-          : 'Nenhum dado público encontrado - possível bloqueio de scraping nas plataformas',
-        profiles: rawLinks.slice(0, 5).map(url => ({
-          platform: 'Referência',
-          url,
-          name: query,
-          description: 'Link de busca'
-        })),
-        education: [],
-        experiences: [],
+          ? `❌ DADOS LIMITADOS: ${extractedData.length} fonte(s) acessada(s), mas o conteúdo HTML não pôde ser analisado adequadamente. As plataformas sociais geralmente bloqueiam scraping automatizado. Apenas links de referência disponíveis abaixo.`
+          : `❌ FALHA NA EXTRAÇÃO: Nenhum conteúdo foi extraído das ${rawLinks.length} fonte(s) consultada(s). Isso ocorre porque plataformas como LinkedIn, Instagram e Twitter bloqueiam acesso automatizado para proteger a privacidade dos usuários. Para informações detalhadas, acesse manualmente os links abaixo.`,
+        profiles: rawLinks.map(url => {
+          let platform = 'Referência de Busca';
+          if (url.includes('linkedin')) platform = 'LinkedIn (busca manual necessária)';
+          else if (url.includes('github')) platform = 'GitHub (busca manual necessária)';
+          else if (url.includes('instagram')) platform = 'Instagram (busca manual necessária)';
+          else if (url.includes('twitter') || url.includes('x.com')) platform = 'Twitter/X (busca manual necessária)';
+          else if (url.includes('lattes')) platform = 'Lattes (busca manual necessária)';
+          
+          return {
+            platform,
+            url,
+            name: query,
+            description: 'Clique para acessar e verificar manualmente'
+          };
+        }),
+        education: [], // NUNCA preencher com dados fictícios
+        experiences: [], // NUNCA preencher com dados fictícios
         recentActivities: [],
         sourceLinks: []
       });

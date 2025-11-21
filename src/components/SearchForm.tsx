@@ -129,253 +129,78 @@ export const SearchForm = ({ selectedPlan = 'basic' }: SearchFormProps) => {
             .eq('id', job.id);
         } catch (error) {
           console.error('Error processing OSINT search:', error);
-          // Fallback to mock results if OSINT service fails
+          // Fallback HONESTO: apenas links de referência, SEM dados fictícios
           const mockResults = {
-            summary: selectedPlan === 'complete' 
-              ? `Análise completa realizada para "${formData.name}". Foram encontrados perfis em ${selectedPlan === 'complete' ? 10 : 3} plataformas diferentes, incluindo redes sociais, perfis profissionais e dados governamentais.` 
-              : `Análise básica realizada para "${formData.name}". Foram identificados perfis em plataformas principais como LinkedIn, GitHub e Instagram.`,
-            totalProfilesFound: selectedPlan === 'complete' ? 12 : 5,
+            summary: `❌ FALHA NA ANÁLISE AUTOMÁTICA para "${formData.name}". A extração de dados das plataformas não foi possível devido a restrições de scraping. Apenas links de referência estão disponíveis. Recomenda-se verificação manual.`,
+            totalProfilesFound: 0,
             persons: [
               {
                 name: formData.name,
-                confidence: 95,
-                location: formData.city || 'Não especificado',
-                summary: selectedPlan === 'complete' 
-                  ? `Perfil principal identificado com alta confiança (${formData.name}) em múltiplas fontes públicas. Presença verificada em plataformas profissionais e redes sociais.` 
-                  : `Perfil identificado com confiança moderada em plataformas profissionais e redes sociais.`,
-                education: selectedPlan === 'complete' 
-                  ? [
-                      `Bacharelado em ${formData.name.toLowerCase().includes('silva') ? 'Engenharia de Software' : formData.name.toLowerCase().includes('santos') ? 'Ciência da Computação' : 'Ciência da Computação'} - ${formData.name.toLowerCase().includes('silva') ? 'Universidade Federal do Maranhão' : formData.name.toLowerCase().includes('santos') ? 'Universidade de São Paulo' : 'Universidade XYZ'}`,
-                      ...(formData.name.toLowerCase().includes('silva') ? ['Mestrado em Inteligência Artificial - Instituto Tecnológico de Aeronáutica'] : 
-                         formData.name.toLowerCase().includes('santos') ? ['Pós-graduação em Segurança da Informação - PUC-Rio'] : 
-                         ['Pós-graduação em Segurança da Informação - Instituto ABC'])
-                    ]
-                  : [
-                      `Bacharelado em ${formData.name.toLowerCase().includes('silva') ? 'Engenharia de Software' : formData.name.toLowerCase().includes('santos') ? 'Ciência da Computação' : 'Ciência da Computação'} - ${formData.name.toLowerCase().includes('silva') ? 'Universidade Federal do Maranhão' : formData.name.toLowerCase().includes('santos') ? 'Universidade de São Paulo' : 'Universidade XYZ'}`
-                    ],
-                experiences: selectedPlan === 'complete' 
-                  ? [
-                      `${formData.name.toLowerCase().includes('silva') ? 'Engenheiro de Software Sênior' : formData.name.toLowerCase().includes('santos') ? 'Desenvolvedor Full Stack' : 'Desenvolvedor Sênior'} - ${formData.name.toLowerCase().includes('silva') ? 'Tech Solutions LTDA' : formData.name.toLowerCase().includes('santos') ? 'Inovação Digital S.A.' : 'Empresa ABC'} (2020-Presente)`,
-                      `${formData.name.toLowerCase().includes('silva') ? 'Analista de Sistemas' : formData.name.toLowerCase().includes('santos') ? 'Programador' : 'Analista de Sistemas'} - ${formData.name.toLowerCase().includes('silva') ? 'Sistemas Inteligentes ME' : formData.name.toLowerCase().includes('santos') ? 'Soluções Tecnológicas LTDA' : 'Empresa DEF'} (2018-2020)`,
-                      ...(formData.name.toLowerCase().includes('silva') ? ['Consultor de TI Freelancer (2016-2018)'] : 
-                         formData.name.toLowerCase().includes('santos') ? ['Desenvolvedor Mobile - Apps Modernos (2016-2018)'] : 
-                         ['Consultor de TI Freelancer (2016-2018)'])
-                    ]
-                  : [
-                      `${formData.name.toLowerCase().includes('silva') ? 'Engenheiro de Software Sênior' : formData.name.toLowerCase().includes('santos') ? 'Desenvolvedor Full Stack' : 'Desenvolvedor Sênior'} - ${formData.name.toLowerCase().includes('silva') ? 'Tech Solutions LTDA' : formData.name.toLowerCase().includes('santos') ? 'Inovação Digital S.A.' : 'Empresa ABC'} (2020-Presente)`,
-                      `${formData.name.toLowerCase().includes('silva') ? 'Analista de Sistemas' : formData.name.toLowerCase().includes('santos') ? 'Programador' : 'Analista de Sistemas'} - ${formData.name.toLowerCase().includes('silva') ? 'Sistemas Inteligentes ME' : formData.name.toLowerCase().includes('santos') ? 'Soluções Tecnológicas LTDA' : 'Empresa DEF'} (2018-2020)`
-                    ],
+                confidence: 15, // Confiança muito baixa
+                location: formData.city || undefined,
+                summary: `⚠️ NENHUM DADO EXTRAÍDO: A análise automática falhou. As plataformas consultadas bloquearam o acesso automatizado. Apenas ${selectedPlan === 'complete' ? 'links de referência' : 'links básicos'} estão disponíveis. Para obter informações detalhadas, você deve acessar manualmente cada link abaixo.`,
+                education: [], // NUNCA preencher com dados fictícios
+                experiences: [], // NUNCA preencher com dados fictícios
                 profiles: [
                   {
-                    platform: 'LinkedIn',
+                    platform: 'LinkedIn (verificação manual)',
                     name: formData.name,
                     url: `https://linkedin.com/search/results/people/?keywords=${encodeURIComponent(formData.name)}`,
-                    description: 'Perfil profissional',
-                    relevanceScore: 95
+                    description: 'Link de busca - acesso manual necessário',
+                    relevanceScore: undefined
                   },
                   {
-                    platform: 'GitHub',
+                    platform: 'GitHub (verificação manual)',
                     url: `https://github.com/${formData.username || formData.name.replace(/\s+/g, '')}`,
-                    description: 'Perfil de desenvolvedor',
-                    relevanceScore: 88
+                    description: 'Link de busca - acesso manual necessário',
+                    relevanceScore: undefined
                   },
                   ...(selectedPlan === 'complete' ? [
                     {
-                      platform: 'Instagram',
+                      platform: 'Instagram (verificação manual)',
                       url: `https://instagram.com/${formData.username || formData.name.replace(/\s+/g, '')}`,
-                      description: 'Perfil social',
-                      relevanceScore: 82
+                      description: 'Link de busca - dados não extraídos',
+                      relevanceScore: undefined
                     },
                     {
-                      platform: 'Twitter',
+                      platform: 'Twitter (verificação manual)',
                       url: `https://twitter.com/${formData.username || formData.name.replace(/\s+/g, '')}`,
-                      description: 'Perfil no Twitter',
-                      relevanceScore: 78
+                      description: 'Link de busca - dados não extraídos',
+                      relevanceScore: undefined
                     },
                     {
-                      platform: 'Facebook',
+                      platform: 'Facebook (verificação manual)',
                       url: `https://facebook.com/search/people/?q=${encodeURIComponent(formData.name)}`,
-                      description: 'Perfil no Facebook',
-                      relevanceScore: 75
+                      description: 'Link de busca - dados não extraídos',
+                      relevanceScore: undefined
                     },
                     {
-                      platform: 'TikTok',
-                      url: `https://tiktok.com/search?q=${encodeURIComponent(formData.name)}`,
-                      description: 'Perfil no TikTok',
-                      relevanceScore: 70
+                      platform: 'Lattes (verificação manual)',
+                      url: `https://lattes.cnpq.br/buscacv?q=${encodeURIComponent(formData.name)}`,
+                      description: 'Currículo Lattes - verificação manual necessária',
+                      relevanceScore: undefined
                     },
                     {
-                      platform: 'Reddit',
-                      url: `https://reddit.com/search?q=${encodeURIComponent(formData.name)}`,
-                      description: 'Presença no Reddit',
-                      relevanceScore: 68
-                    },
-                    {
-                      platform: 'Medium',
-                      url: `https://medium.com/search?q=${encodeURIComponent(formData.name)}`,
-                      description: 'Artigos no Medium',
-                      relevanceScore: 65
-                    },
-                    {
-                      platform: 'Dev.to',
-                      url: `https://dev.to/search?q=${encodeURIComponent(formData.name)}`,
-                      description: 'Artigos no Dev.to',
-                      relevanceScore: 65
-                    },
-                    {
-                      platform: 'Stack Overflow',
-                      url: `https://stackoverflow.com/users?tab=reputation&filter=all&search=${encodeURIComponent(formData.name)}`,
-                      description: 'Perfil no Stack Overflow',
-                      relevanceScore: 72
-                    },
-                    {
-                      platform: 'YouTube',
-                      url: `https://youtube.com/results?search_query=${encodeURIComponent(formData.name)}`,
-                      description: 'Canal no YouTube',
-                      relevanceScore: 70
-                    },
-                    {
-                      platform: 'Pinterest',
-                      url: `https://pinterest.com/search/pins/?q=${encodeURIComponent(formData.name)}`,
-                      description: 'Perfil no Pinterest',
-                      relevanceScore: 60
-                    },
-                    {
-                      platform: 'Behance',
-                      url: `https://behance.net/search?search=${encodeURIComponent(formData.name)}`,
-                      description: 'Portfólio no Behance',
-                      relevanceScore: 65
-                    },
-                    {
-                      platform: 'Telegram',
-                      url: `https://t.me/${formData.username || formData.name.replace(/\s+/g, '')}`,
-                      description: 'Perfil no Telegram',
-                      relevanceScore: 55
-                    },
-                    {
-                      platform: 'WhatsApp Business',
-                      url: '#',
-                      description: 'Possível perfil no WhatsApp Business',
-                      relevanceScore: 50
-                    },
-                    {
-                      platform: 'Vimeo',
-                      url: `https://vimeo.com/search?q=${encodeURIComponent(formData.name)}`,
-                      description: 'Perfil no Vimeo',
-                      relevanceScore: 55
-                    },
-                    {
-                      platform: 'Twitch',
-                      url: `https://twitch.tv/search?term=${encodeURIComponent(formData.name)}`,
-                      description: 'Canal na Twitch',
-                      relevanceScore: 50
-                    },
-                    {
-                      platform: 'Discord',
-                      url: '#',
-                      description: 'Possível servidor no Discord',
-                      relevanceScore: 45
-                    },
-                    {
-                      platform: 'Quora',
-                      url: `https://quora.com/search?q=${encodeURIComponent(formData.name)}`,
-                      description: 'Perfil no Quora',
-                      relevanceScore: 60
-                    },
-                    {
-                      platform: 'OnlyFans (suspeito)',
-                      url: '#',
-                      description: 'Possível perfil adulto identificado',
-                      relevanceScore: 65
-                    },
-                    {
-                      platform: 'Privacy.com (suspeito)',
-                      url: '#',
-                      description: 'Possível perfil em plataforma de conteúdo adulto',
-                      relevanceScore: 60
-                    },
-                    {
-                      platform: 'X/Twitter',
-                      url: `https://x.com/search?q=${encodeURIComponent(formData.name)}&lang=pt`,
-                      description: 'Busca em perfis do Twitter/X',
-                      relevanceScore: 75
-                    },
-                    {
-                      platform: 'Lattes',
-                      url: 'https://lattes.cnpq.br/',
-                      description: 'Currículo Lattes - Plataforma brasileira de currículos',
-                      relevanceScore: 80
-                    },
-                    {
-                      platform: 'Serasa',
-                      url: `https://empresas.serasaexperian.com.br/busca-empresa/${encodeURIComponent(formData.name)}`,
-                      description: 'Consulta empresarial no Serasa Experian',
-                      relevanceScore: 65
-                    },
-                    {
-                      platform: 'JusBrasil',
+                      platform: 'JusBrasil (verificação manual)',
                       url: `https://www.jusbrasil.com.br/busca?q=${encodeURIComponent(formData.name)}`,
-                      description: 'Busca em documentos jurídicos e processos',
-                      relevanceScore: 70
+                      description: 'Busca jurídica - verificação manual necessária',
+                      relevanceScore: undefined
                     }
                   ] : [])
                 ]
               }
             ],
             rawData: {
-              governmentData: selectedPlan === 'complete' ? {
-                serasaScore: formData.name.toLowerCase().includes('silva') ? '820 (Excelente)' : '750 (Bom)',
-                judicialRecords: formData.name.toLowerCase().includes('silva') ? 'Nenhum processo em andamento' : 'Nenhum processo em andamento',
-                fiscalDebts: formData.name.toLowerCase().includes('silva') ? 'Nenhuma dívida ativa encontrada' : 'Nenhuma dívida ativa encontrada',
-                electoralData: formData.name.toLowerCase().includes('silva') ? 'Ficha limpa eleitoral' : 'Ficha limpa eleitoral'
-              } : null,
+              governmentData: undefined, // Dados governamentais não acessíveis via scraping automático
               socialMedia: {
-                totalProfiles: selectedPlan === 'complete' ? 25 : 3,
+                totalProfiles: selectedPlan === 'complete' ? 20 : 3,
                 platforms: selectedPlan === 'complete' ? 
-                  ['LinkedIn', 'GitHub', 'Instagram', 'Twitter', 'Facebook', 'TikTok', 'Reddit', 'Medium', 'Dev.to', 'Stack Overflow', 'YouTube', 'Pinterest', 'Behance', 'Telegram', 'WhatsApp Business', 'Vimeo', 'Twitch', 'Discord', 'Quora', 'OnlyFans (suspeito)', 'Privacy.com (suspeito)', 'X/Twitter', 'Lattes', 'Serasa', 'JusBrasil'] :
+                  ['LinkedIn', 'GitHub', 'Instagram', 'Twitter', 'Facebook', 'TikTok', 'Reddit', 'Medium', 'Dev.to', 'Stack Overflow', 'YouTube', 'Lattes', 'JusBrasil'] :
                   ['LinkedIn', 'GitHub', 'Instagram']
               },
-              positiveData: selectedPlan === 'complete' 
-                ? [
-                    `Presença profissional consistente em ${formData.city || 'localização informada'}`,
-                    formData.name.toLowerCase().includes('silva') 
-                      ? 'Histórico educacional verificado em plataformas oficiais do governo' 
-                      : formData.name.toLowerCase().includes('santos') 
-                        ? 'Histórico educacional verificado em universidades renomadas' 
-                        : 'Histórico educacional verificado em plataformas oficiais',
-                    formData.name.toLowerCase().includes('silva') 
-                      ? 'Experiência de trabalho comprovada em empresas de tecnologia' 
-                      : formData.name.toLowerCase().includes('santos') 
-                        ? 'Experiência de trabalho comprovada em startups inovadoras' 
-                        : 'Experiência de trabalho comprovada em múltiplas empresas',
-                    'Atividade recente em redes sociais e plataformas profissionais',
-                    'Presença em currículo Lattes e perfis GitHub'
-                  ]
-                : [
-                    `Presença profissional consistente em ${formData.city || 'localização informada'}`,
-                    formData.name.toLowerCase().includes('silva') 
-                      ? 'Histórico educacional verificado em plataformas oficiais do governo' 
-                      : formData.name.toLowerCase().includes('santos') 
-                        ? 'Histórico educacional verificado em universidades renomadas' 
-                        : 'Histórico educacional verificado',
-                    formData.name.toLowerCase().includes('silva') 
-                      ? 'Experiência de trabalho comprovada em empresas de tecnologia' 
-                      : formData.name.toLowerCase().includes('santos') 
-                        ? 'Experiência de trabalho comprovada em startups inovadoras' 
-                        : 'Experiência de trabalho comprovada'
-                  ],
-              negativeData: selectedPlan === 'complete' ? [
-                'Possível perfil em plataforma adulta',
-                'Alguns comentários controversos em redes sociais'
-              ] : [],
-              riskIndicators: selectedPlan === 'complete' ? [
-                'Baixo risco financeiro (score Serasa bom)',
-                'Risco reputacional moderado (conteúdo adulto)',
-                'Nenhum risco legal identificado'
-              ] : [
-                'Baixo risco financeiro (score Serasa bom)',
-                'Nenhum risco legal identificado'
-              ]
+              positiveData: [],  // Removido - nenhum dado real extraído
+              negativeData: [],  // Removido - nenhum dado real extraído
+              riskIndicators: [] // Removido - nenhum dado real extraído
             },
             rawLinks: [
               `https://www.google.com/search?q=${encodeURIComponent(formData.name + (formData.city ? ` ${formData.city}` : '') + (formData.username ? ` ${formData.username}` : ''))}`,
@@ -405,51 +230,14 @@ export const SearchForm = ({ selectedPlan = 'basic' }: SearchFormProps) => {
                 `https://quora.com/search?q=${encodeURIComponent(formData.name)}`
               ] : [])
             ],
-            alerts: selectedPlan === 'complete' ? [
-              formData.name.toLowerCase().includes('silva') 
-                ? 'Atenção: Possível perfil em plataforma adulta identificado' 
-                : 'Recomendação: Verificar conteúdo antes de contato profissional',
-              `Perfil encontrado em ${Math.floor(Math.random() * 5) + 3} redes sociais diferentes`
-            ] : [
-              `Perfil encontrado em ${Math.floor(Math.random() * 3) + 2} plataformas`
+            alerts: [
+              '🚨 FALHA NA EXTRAÇÃO AUTOMÁTICA: As plataformas bloquearam o acesso',
+              '⚠️ DADOS FICTÍCIOS REMOVIDOS: Este relatório não contém informações inventadas',
+              `📋 ${selectedPlan === 'complete' ? 'Links de referência' : 'Links básicos'} disponíveis para verificação manual`,
+              '🔍 RECOMENDAÇÃO: Acesse manualmente cada link para obter informações verificadas'
             ],
             searchQuery: `${formData.name}${formData.city ? ` ${formData.city}` : ''}${formData.username ? ` ${formData.username}` : ''}`,
-            timestamp: new Date().toISOString(),
-            education: selectedPlan === 'complete' 
-              ? [
-                  `Bacharelado em ${formData.name.toLowerCase().includes('silva') ? 'Engenharia de Software' : formData.name.toLowerCase().includes('santos') ? 'Ciência da Computação' : 'Ciência da Computação'} - ${formData.name.toLowerCase().includes('silva') ? 'Universidade Federal do Maranhão' : formData.name.toLowerCase().includes('santos') ? 'Universidade de São Paulo' : 'Universidade XYZ'}`,
-                  ...(formData.name.toLowerCase().includes('silva') ? ['Mestrado em Inteligência Artificial - Instituto Tecnológico de Aeronáutica'] : 
-                     formData.name.toLowerCase().includes('santos') ? ['Pós-graduação em Segurança da Informação - PUC-Rio'] : 
-                     ['Pós-graduação em Segurança da Informação - Instituto ABC'])
-                ]
-              : [
-                  `Bacharelado em ${formData.name.toLowerCase().includes('silva') ? 'Engenharia de Software' : formData.name.toLowerCase().includes('santos') ? 'Ciência da Computação' : 'Ciência da Computação'} - ${formData.name.toLowerCase().includes('silva') ? 'Universidade Federal do Maranhão' : formData.name.toLowerCase().includes('santos') ? 'Universidade de São Paulo' : 'Universidade XYZ'}`
-                ],
-            experiences: selectedPlan === 'complete' 
-              ? [
-                  `${formData.name.toLowerCase().includes('silva') ? 'Engenheiro de Software Sênior' : formData.name.toLowerCase().includes('santos') ? 'Desenvolvedor Full Stack' : 'Desenvolvedor Sênior'} - ${formData.name.toLowerCase().includes('silva') ? 'Tech Solutions LTDA' : formData.name.toLowerCase().includes('santos') ? 'Inovação Digital S.A.' : 'Empresa ABC'} (2020-Presente)`,
-                  `${formData.name.toLowerCase().includes('silva') ? 'Analista de Sistemas' : formData.name.toLowerCase().includes('santos') ? 'Programador' : 'Analista de Sistemas'} - ${formData.name.toLowerCase().includes('silva') ? 'Sistemas Inteligentes ME' : formData.name.toLowerCase().includes('santos') ? 'Soluções Tecnológicas LTDA' : 'Empresa DEF'} (2018-2020)`,
-                  ...(formData.name.toLowerCase().includes('silva') ? ['Consultor de TI Freelancer (2016-2018)'] : 
-                     formData.name.toLowerCase().includes('santos') ? ['Desenvolvedor Mobile - Apps Modernos (2016-2018)'] : 
-                     ['Consultor de TI Freelancer (2016-2018)'])
-                ]
-              : [
-                  `${formData.name.toLowerCase().includes('silva') ? 'Engenheiro de Software Sênior' : formData.name.toLowerCase().includes('santos') ? 'Desenvolvedor Full Stack' : 'Desenvolvedor Sênior'} - ${formData.name.toLowerCase().includes('silva') ? 'Tech Solutions LTDA' : formData.name.toLowerCase().includes('santos') ? 'Inovação Digital S.A.' : 'Empresa ABC'} (2020-Presente)`,
-                  `${formData.name.toLowerCase().includes('silva') ? 'Analista de Sistemas' : formData.name.toLowerCase().includes('santos') ? 'Programador' : 'Analista de Sistemas'} - ${formData.name.toLowerCase().includes('silva') ? 'Sistemas Inteligentes ME' : formData.name.toLowerCase().includes('santos') ? 'Soluções Tecnológicas LTDA' : 'Empresa DEF'} (2018-2020)`
-                ],
-            photos: imageData ? [{
-              url: 'https://example.com/uploaded-photo.jpg',
-              reverseSearchResults: {
-                matches: [
-                  {
-                    url: 'https://example.com/match1',
-                    similarity: 95,
-                    platform: 'Stock Photo Site'
-                  }
-                ],
-                isStockPhoto: false
-              }
-            }] : []
+            timestamp: new Date().toISOString()
           };
 
           // Update job with mock results
