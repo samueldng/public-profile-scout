@@ -170,34 +170,21 @@ export async function reverseImageSearch(foto: File): Promise<any> {
 
 // 3. Extract information functions
 export function extractEducation(results: any): string[] {
-  // In a real implementation, this would extract education from results
-  // For now, we'll return simulated data
-  return [
-    "Bacharelado em Ciência da Computação - Universidade XYZ (2015-2019)",
-    "Mestrado em Inteligência Artificial - Universidade ABC (2020-2022)"
-  ];
+  // ⚠️ DADOS FICTÍCIOS REMOVIDOS - Retorna array vazio
+  // Educação só deve ser extraída de fontes reais verificadas
+  return [];
 }
 
 export function extractJobs(results: any): string[] {
-  // In a real implementation, this would extract job information from results
-  // For now, we'll return simulated data
-  return [
-    "Desenvolvedor Sênior - Empresa ABC (2020-Presente)",
-    "Analista de Sistemas - Empresa DEF (2018-2020)"
-  ];
+  // ⚠️ DADOS FICTÍCIOS REMOVIDOS - Retorna array vazio
+  // Experiências só devem ser extraídas de fontes reais verificadas
+  return [];
 }
 
 export function extractLegalRecords(results: any): any[] {
-  // In a real implementation, this would extract legal records from results
-  // For now, we'll return simulated data
-  return [
-    {
-      type: "Civil",
-      number: "12345",
-      status: "Concluído",
-      parties: ["João Silva", "Maria Santos"]
-    }
-  ];
+  // ⚠️ DADOS FICTÍCIOS REMOVIDOS - Retorna array vazio
+  // Processos legais só devem ser extraídos de fontes oficiais verificadas
+  return [];
 }
 
 // 4. Consolidate results
@@ -349,18 +336,23 @@ export async function performOSINTSearch(input: OSINTInput): Promise<OSINTResult
       });
     }
     
-    // Generate summary
-    const summary = `Análise realizada para "${input.nome}". Foram encontrados perfis em múltiplas plataformas públicas.`;
+    // Generate HONEST summary
+    const hasRealData = profiles.length > 0;
+    const summary = hasRealData
+      ? `Análise para "${input.nome}". ${profiles.length} perfil(is) público(s) encontrado(s). ⚠️ Limitações: scraping bloqueado em várias plataformas.`
+      : `❌ ANÁLISE LIMITADA para "${input.nome}". Apenas links de referência disponíveis. As plataformas bloquearam a extração automática de dados.`;
     
-    // Create person profiles
+    // Create person profiles WITHOUT fictional data
     const persons: PersonProfile[] = [
       {
         name: input.nome,
-        confidence: 95,
-        location: input.cidade || 'Não especificado',
-        summary: `Perfil principal identificado com alta confiança (${input.nome}) em múltiplas fontes públicas.`,
-        education: consolidated.educacao,
-        experiences: consolidated.empregos,
+        confidence: hasRealData ? 60 : 15, // Confiança realista
+        location: input.cidade || undefined,
+        summary: hasRealData
+          ? `Perfis públicos encontrados para ${input.nome}. Dados detalhados não extraíveis devido a restrições de scraping.`
+          : `⚠️ Nenhum dado detalhado extraído. As plataformas bloqueiam acesso automatizado. Verifique manualmente os links abaixo.`,
+        education: consolidated.educacao.length > 0 ? consolidated.educacao : [], // Vazio porque extractEducation agora retorna []
+        experiences: consolidated.empregos.length > 0 ? consolidated.empregos : [], // Vazio porque extractJobs agora retorna []
         profiles: [
           ...profiles,
           ...additionalProfiles
@@ -368,7 +360,7 @@ export async function performOSINTSearch(input: OSINTInput): Promise<OSINTResult
       }
     ];
     
-    // Create raw data
+    // Create raw data WITHOUT fictional information
     const rawData: RawData = {
       socialMedia: {
         totalProfiles: profiles.length + additionalProfiles.length,
@@ -377,40 +369,24 @@ export async function performOSINTSearch(input: OSINTInput): Promise<OSINTResult
           ...additionalProfiles.map(p => p.platform)
         ]
       },
-      positiveData: [
-        `Presença profissional consistente em ${input.cidade || 'localização informada'}`,
-        'Histórico educacional verificado',
-        'Experiência de trabalho comprovada'
-      ],
-      negativeData: [],
-      riskIndicators: [
-        'Baixo risco financeiro',
-        'Nenhum risco legal identificado'
-      ]
+      positiveData: [], // ⚠️ REMOVIDO: Dados não verificáveis
+      negativeData: [], // ⚠️ REMOVIDO: Dados não verificáveis
+      riskIndicators: [] // ⚠️ REMOVIDO: Dados não verificáveis
     };
     
-    // Add government data for complete plan
-    if (input.username) {
-      rawData.governmentData = {
-        serasaScore: '820 (Excelente)',
-        judicialRecords: 'Nenhum processo em andamento',
-        fiscalDebts: 'Nenhuma dívida ativa encontrada',
-        electoralData: 'Ficha limpa eleitoral'
-      };
-      
-      // Add some negative data for complete plan
-      rawData.negativeData = [
-        'Possível perfil em plataforma adulta',
-        'Alguns comentários controversos em redes sociais'
-      ];
-    }
+    // ⚠️ REMOVIDO: Dados governamentais fictícios
+    // Dados como Serasa, processos judiciais, etc não são acessíveis via scraping público
     
-    // Create alerts
-    const alerts: string[] = [];
-    if (input.username) {
-      alerts.push('Atenção: Possível perfil em plataforma adulta identificado');
+    // Create HONEST alerts
+    const alerts: string[] = [
+      '⚠️ LIMITAÇÃO: Plataformas bloqueiam scraping automatizado',
+      '📋 Apenas links de referência disponíveis para verificação manual',
+      `🔍 ${rawData.socialMedia.totalProfiles} link(s) de busca gerado(s)`
+    ];
+    
+    if (rawData.socialMedia.totalProfiles === 0) {
+      alerts.push('❌ Nenhum perfil público acessível via automação');
     }
-    alerts.push(`Perfil encontrado em ${rawData.socialMedia.totalProfiles} redes sociais diferentes`);
     
     // Return structured results
     return {
