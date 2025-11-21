@@ -103,33 +103,17 @@ export async function fetchLinkedinPublic(nome: string): Promise<any> {
   // For now, we'll simulate the results
   const query = `${nome} linkedin`;
   
-  // Simulated results
-  return {
-    profile: {
-      name: nome,
-      url: `https://linkedin.com/in/${nome.replace(/\s+/g, '-')}`,
-      headline: "Professional at XYZ Company",
-      location: "São Paulo, Brazil"
-    }
-  };
+  // ⚠️ DADOS FICTÍCIOS REMOVIDOS - LinkedIn bloqueia scraping automatizado
+  // Retorna null para indicar que não foi possível extrair dados reais
+  return null;
 }
 
 // 2.3 Direct Lattes search (public filter)
 export async function searchLattes(nome: string): Promise<any> {
-  // In a real implementation, this would fetch from Lattes public search
-  // For now, we'll simulate the results
+  // ⚠️ DADOS FICTÍCIOS REMOVIDOS - Lattes requer autenticação/CAPTCHA
+  // Retorna null para indicar que não foi possível extrair dados reais
   const url = `https://lattes.cnpq.br/buscacv?q=${encodeURIComponent(nome)}`;
-  
-  // Simulated results
-  return {
-    profiles: [
-      {
-        name: nome,
-        url: `https://lattes.cnpq.br/0123456789012345`,
-        institution: "Universidade de São Paulo"
-      }
-    ]
-  };
+  return null;
 }
 
 // 2.4 Public legal records search
@@ -261,50 +245,49 @@ export async function performOSINTSearch(input: OSINTInput): Promise<OSINTResult
     const consolidated = consolidateResults(results);
     
     // Create profiles array
+    // Como não conseguimos extrair dados reais, criamos apenas links de referência
     const profiles: SearchResult[] = [];
     
-    if (results.linkedin) {
-      profiles.push({
-        platform: 'LinkedIn',
-        name: normalizedData.nome,
-        url: results.linkedin.profile.url,
-        description: results.linkedin.profile.headline,
-        relevanceScore: 95
-      });
-    }
+    // LinkedIn: scraping bloqueado, apenas link de busca
+    profiles.push({
+      platform: 'LinkedIn (verificação manual necessária)',
+      name: normalizedData.nome,
+      url: `https://linkedin.com/search/results/people/?keywords=${encodeURIComponent(normalizedData.nome)}`,
+      description: 'Link de busca - plataforma bloqueia scraping automatizado',
+      relevanceScore: undefined
+    });
     
-    if (results.lattes) {
-      profiles.push({
-        platform: 'Lattes',
-        name: normalizedData.nome,
-        url: results.lattes.profiles[0].url,
-        description: `Perfil Lattes - ${results.lattes.profiles[0].institution}`,
-        relevanceScore: 80
-      });
-    }
+    // Lattes: CAPTCHA/autenticação requerida, apenas link de busca
+    profiles.push({
+      platform: 'Lattes (verificação manual necessária)',
+      name: normalizedData.nome,
+      url: `https://lattes.cnpq.br/buscacv?q=${encodeURIComponent(normalizedData.nome)}`,
+      description: 'Link de busca - plataforma requer verificação manual',
+      relevanceScore: undefined
+    });
     
-    // Add more profiles for complete plan
+    // Add profile links (without fictional data or relevance scores)
     const additionalProfiles: SearchResult[] = [];
     if (normalizedData.username) {
       additionalProfiles.push({
-        platform: 'GitHub',
+        platform: 'GitHub (verificação manual necessária)',
         url: `https://github.com/${normalizedData.username}`,
-        description: 'Perfil de desenvolvedor',
-        relevanceScore: 88
+        description: 'Link de perfil - dados não extraídos automaticamente',
+        relevanceScore: undefined // Sem score fictício
       });
       
       additionalProfiles.push({
-        platform: 'Instagram',
+        platform: 'Instagram (verificação manual necessária)',
         url: `https://instagram.com/${normalizedData.username}`,
-        description: 'Perfil social',
-        relevanceScore: 82
+        description: 'Link de perfil - dados não extraídos automaticamente',
+        relevanceScore: undefined // Sem score fictício
       });
       
       additionalProfiles.push({
-        platform: 'Twitter',
+        platform: 'Twitter (verificação manual necessária)',
         url: `https://twitter.com/${normalizedData.username}`,
-        description: 'Perfil no Twitter',
-        relevanceScore: 78
+        description: 'Link de perfil - dados não extraídos automaticamente',
+        relevanceScore: undefined // Sem score fictício
       });
     }
     
