@@ -108,6 +108,39 @@ export async function fetchLinkedinPublic(nome: string): Promise<any> {
   return null;
 }
 
+// 2.2b 🎯 EXTRAÇÃO REAL: Fetch GitHub profile via API pública
+export async function fetchGitHubProfile(username: string): Promise<any> {
+  try {
+    console.log(`Buscando dados REAIS do GitHub para: ${username}`);
+    const response = await fetch(`https://api.github.com/users/${username}`);
+    if (!response.ok) {
+      console.log('GitHub: Perfil não encontrado ou acesso bloqueado');
+      return null;
+    }
+    
+    const data = await response.json();
+    console.log('GitHub: Dados reais extraídos com sucesso!');
+    
+    return {
+      name: data.name || username,
+      username: data.login,
+      bio: data.bio,
+      location: data.location,
+      company: data.company,
+      blog: data.blog,
+      followers: data.followers,
+      following: data.following,
+      public_repos: data.public_repos,
+      avatar_url: data.avatar_url,
+      profile_url: data.html_url,
+      created_at: data.created_at
+    };
+  } catch (error) {
+    console.error('Erro ao buscar GitHub:', error);
+    return null;
+  }
+}
+
 // 2.3 Direct Lattes search (public filter)
 export async function searchLattes(nome: string): Promise<any> {
   // ⚠️ DADOS FICTÍCIOS REMOVIDOS - Lattes requer autenticação/CAPTCHA
@@ -225,10 +258,19 @@ export async function performOSINTSearch(input: OSINTInput): Promise<OSINTResult
     // Search Google
     const googleResults = await searchGoogle(normalizedData.nome, normalizedData.cidade);
     
-    // Fetch LinkedIn public profile
+    // Fetch LinkedIn public profile (geralmente bloqueado)
     results.linkedin = await fetchLinkedinPublic(normalizedData.nome);
     
-    // Search Lattes
+    // 🎯 EXTRAÇÃO REAL: Buscar dados do GitHub se username fornecido
+    if (normalizedData.username) {
+      console.log('🎯 Tentando extrair dados REAIS do GitHub...');
+      results.github = await fetchGitHubProfile(normalizedData.username);
+      if (results.github) {
+        console.log('✅ Dados reais do GitHub extraídos com sucesso!');
+      }
+    }
+    
+    // Search Lattes (requer CAPTCHA)
     results.lattes = await searchLattes(normalizedData.nome);
     
     // Search legal records if complete plan
@@ -266,15 +308,28 @@ export async function performOSINTSearch(input: OSINTInput): Promise<OSINTResult
       relevanceScore: undefined
     });
     
-    // Add profile links (without fictional data or relevance scores)
+    // Add profile links
     const additionalProfiles: SearchResult[] = [];
     if (normalizedData.username) {
-      additionalProfiles.push({
-        platform: 'GitHub (verificação manual necessária)',
-        url: `https://github.com/${normalizedData.username}`,
-        description: 'Link de perfil - dados não extraídos automaticamente',
-        relevanceScore: undefined // Sem score fictício
-      });
+      // 🎯 GitHub: Usar dados REAIS se disponíveis
+      if (results.github) {
+        const ghData = results.github;
+        additionalProfiles.push({
+          platform: 'GitHub ✅ (dados reais extraídos)',
+          url: ghData.profile_url,
+          description: ghData.bio || 'Desenvolvedor no GitHub',
+          title: ghData.name || normalizedData.username,
+          location: ghData.location,
+          relevanceScore: 100 // 100% porque são dados REAIS
+        });
+      } else {
+        additionalProfiles.push({
+          platform: 'GitHub (verificação manual necessária)',
+          url: `https://github.com/${normalizedData.username}`,
+          description: 'Perfil existe mas dados não puderam ser extraídos',
+          relevanceScore: undefined
+        });
+      }
       
       additionalProfiles.push({
         platform: 'Instagram (verificação manual necessária)',
@@ -319,23 +374,49 @@ export async function performOSINTSearch(input: OSINTInput): Promise<OSINTResult
       });
     }
     
-    // Generate HONEST summary
-    const hasRealData = profiles.length > 0;
-    const summary = hasRealData
+    // Generate HONEST summary with REAL data info
+    const hasRealGitHubData = results.github !== null;
+    const hasRealData = profiles.length > 0 || hasRealGitHubData;
+    
+    const summary = hasRealGitHubData
+      ? `✅ Análise para "${input.nome}". Dados REAIS extraídos do GitHub! ${profiles.length + additionalProfiles.length} perfil(is) encontrado(s).`
+      : hasRealData
       ? `Análise para "${input.nome}". ${profiles.length} perfil(is) público(s) encontrado(s). ⚠️ Limitações: scraping bloqueado em várias plataformas.`
       : `❌ ANÁLISE LIMITADA para "${input.nome}". Apenas links de referência disponíveis. As plataformas bloquearam a extração automática de dados.`;
     
-    // Create person profiles WITHOUT fictional data
+    // Build person summary from REAL data
+    let personSummary = '';
+    let personLocation = input.cidade || undefined;
+    let personConfidence = 15;
+    
+    if (hasRealGitHubData && results.github) {
+      const gh = results.github;
+      personSummary = `✅ Dados reais extraídos do GitHub:\n`;
+      if (gh.bio) personSummary += `Bio: ${gh.bio}\n`;
+      if (gh.company) personSummary += `Empresa: ${gh.company}\n`;
+      if (gh.location) {
+        personSummary += `Localização: ${gh.location}\n`;
+        personLocation = gh.location;
+      }
+      personSummary += `Repositórios públicos: ${gh.public_repos || 0}\n`;
+      personSummary += `Seguidores: ${gh.followers || 0}`;
+      personConfidence = 85; // Alta confiança com dados reais
+    } else {
+      personSummary = hasRealData
+        ? `Perfis públicos encontrados para ${input.nome}. Dados detalhados não extraíveis devido a restrições de scraping.`
+        : `⚠️ Nenhum dado detalhado extraído. As plataformas bloqueiam acesso automatizado. Verifique manualmente os links abaixo.`;
+      personConfidence = hasRealData ? 60 : 15;
+    }
+    
+    // Create person profiles with REAL or LIMITED data
     const persons: PersonProfile[] = [
       {
-        name: input.nome,
-        confidence: hasRealData ? 60 : 15, // Confiança realista
-        location: input.cidade || undefined,
-        summary: hasRealData
-          ? `Perfis públicos encontrados para ${input.nome}. Dados detalhados não extraíveis devido a restrições de scraping.`
-          : `⚠️ Nenhum dado detalhado extraído. As plataformas bloqueiam acesso automatizado. Verifique manualmente os links abaixo.`,
-        education: consolidated.educacao.length > 0 ? consolidated.educacao : [], // Vazio porque extractEducation agora retorna []
-        experiences: consolidated.empregos.length > 0 ? consolidated.empregos : [], // Vazio porque extractJobs agora retorna []
+        name: results.github?.name || input.nome,
+        confidence: personConfidence,
+        location: personLocation,
+        summary: personSummary,
+        education: consolidated.educacao.length > 0 ? consolidated.educacao : [],
+        experiences: consolidated.empregos.length > 0 ? consolidated.empregos : [],
         profiles: [
           ...profiles,
           ...additionalProfiles
@@ -360,12 +441,18 @@ export async function performOSINTSearch(input: OSINTInput): Promise<OSINTResult
     // ⚠️ REMOVIDO: Dados governamentais fictícios
     // Dados como Serasa, processos judiciais, etc não são acessíveis via scraping público
     
-    // Create HONEST alerts
-    const alerts: string[] = [
-      '⚠️ LIMITAÇÃO: Plataformas bloqueiam scraping automatizado',
-      '📋 Apenas links de referência disponíveis para verificação manual',
-      `🔍 ${rawData.socialMedia.totalProfiles} link(s) de busca gerado(s)`
-    ];
+    // Create HONEST alerts with REAL data indicators
+    const alerts: string[] = [];
+    
+    if (hasRealGitHubData) {
+      alerts.push('✅ SUCESSO: Dados reais extraídos do GitHub via API pública!');
+      alerts.push(`📊 Informações verificadas: ${results.github.public_repos || 0} repositórios, ${results.github.followers || 0} seguidores`);
+    } else {
+      alerts.push('⚠️ LIMITAÇÃO: Plataformas bloqueiam scraping automatizado');
+    }
+    
+    alerts.push('📋 Links de referência disponíveis para verificação manual');
+    alerts.push(`🔍 ${rawData.socialMedia.totalProfiles} link(s) de busca gerado(s)`);
     
     if (rawData.socialMedia.totalProfiles === 0) {
       alerts.push('❌ Nenhum perfil público acessível via automação');
