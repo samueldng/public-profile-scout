@@ -77,24 +77,111 @@ export function normalizeData(input: OSINTInput): NormalizedData {
 // 2. Search strategies
 
 // 2.1 Search by name in search engines
-export async function searchGoogle(nome: string, cidade?: string | null): Promise<any> {
-  // In a real implementation, this would connect to a search engine API
-  // For now, we'll simulate the results
-  const query = `${nome} ${cidade || ""} site:linkedin.com OR site:lattes.cnpq.br OR site:facebook.com`;
+// 🔍 Expandido: Busca em múltiplas fontes públicas
+export async function searchMultipleSources(nome: string, cidade?: string | null, username?: string | null): Promise<any[]> {
+  const sources = [];
   
-  // Simulated results
-  return [
-    {
-      title: `${nome} - LinkedIn`,
-      url: `https://linkedin.com/search/results/people/?keywords=${encodeURIComponent(nome)}`,
-      snippet: `Professional profile for ${nome}`
-    },
-    {
-      title: `${nome} - Lattes`,
-      url: `https://lattes.cnpq.br/buscacv?q=${encodeURIComponent(nome)}`,
-      snippet: `Lattes CV for ${nome}`
-    }
-  ];
+  // Redes Sociais Profissionais
+  sources.push({
+    platform: 'LinkedIn',
+    url: `https://linkedin.com/search/results/people/?keywords=${encodeURIComponent(nome)}${cidade ? `&location=${encodeURIComponent(cidade)}` : ''}`,
+    category: 'Profissional'
+  });
+  
+  // Plataformas Acadêmicas
+  sources.push({
+    platform: 'Lattes (CNPq)',
+    url: `https://lattes.cnpq.br/buscacv?q=${encodeURIComponent(nome)}`,
+    category: 'Acadêmico'
+  });
+  
+  sources.push({
+    platform: 'Google Scholar',
+    url: `https://scholar.google.com/scholar?q="${encodeURIComponent(nome)}"`,
+    category: 'Acadêmico'
+  });
+  
+  // Redes Sociais Gerais
+  sources.push({
+    platform: 'Facebook',
+    url: `https://www.facebook.com/search/people/?q=${encodeURIComponent(nome)}`,
+    category: 'Social'
+  });
+  
+  sources.push({
+    platform: 'Instagram',
+    url: username ? `https://instagram.com/${username}` : `https://www.instagram.com/explore/tags/${encodeURIComponent(nome.replace(/\s+/g, ''))}`,
+    category: 'Social'
+  });
+  
+  sources.push({
+    platform: 'Twitter/X',
+    url: username ? `https://twitter.com/${username}` : `https://twitter.com/search?q=${encodeURIComponent(nome)}&f=user`,
+    category: 'Social'
+  });
+  
+  // Plataformas de Desenvolvimento
+  if (username) {
+    sources.push({
+      platform: 'GitHub',
+      url: `https://github.com/${username}`,
+      category: 'Desenvolvimento'
+    });
+    
+    sources.push({
+      platform: 'GitLab',
+      url: `https://gitlab.com/${username}`,
+      category: 'Desenvolvimento'
+    });
+  }
+  
+  sources.push({
+    platform: 'Stack Overflow',
+    url: `https://stackoverflow.com/users?tab=reputation&filter=all&search=${encodeURIComponent(nome)}`,
+    category: 'Desenvolvimento'
+  });
+  
+  // Plataformas de Conteúdo
+  sources.push({
+    platform: 'Medium',
+    url: `https://medium.com/search/posts?q=${encodeURIComponent(nome)}`,
+    category: 'Conteúdo'
+  });
+  
+  sources.push({
+    platform: 'YouTube',
+    url: `https://www.youtube.com/results?search_query=${encodeURIComponent(nome)}`,
+    category: 'Conteúdo'
+  });
+  
+  // Registros Públicos Brasileiros
+  if (cidade) {
+    sources.push({
+      platform: 'JusBrasil',
+      url: `https://www.jusbrasil.com.br/busca?q=${encodeURIComponent(nome)}`,
+      category: 'Jurídico'
+    });
+    
+    sources.push({
+      platform: 'Transparência Brasil',
+      url: `https://www.transparencia.org.br/busca?q=${encodeURIComponent(nome)}`,
+      category: 'Público'
+    });
+  }
+  
+  // Busca Geral
+  sources.push({
+    platform: 'Google',
+    url: `https://www.google.com/search?q="${encodeURIComponent(nome)}"${cidade ? `+"${encodeURIComponent(cidade)}"` : ''}`,
+    category: 'Geral'
+  });
+  
+  return sources;
+}
+
+export async function searchGoogle(nome: string, cidade?: string | null): Promise<any> {
+  // Mantido para compatibilidade
+  return searchMultipleSources(nome, cidade, null);
 }
 
 // 2.2 Direct LinkedIn search (public)
@@ -346,24 +433,27 @@ export async function performOSINTSearch(input: OSINTInput): Promise<OSINTResult
       });
     }
     
-    // Create raw links array
-    const rawLinks: string[] = [
-      `https://www.google.com/search?q=${encodeURIComponent(normalizedData.nome + (normalizedData.cidade ? ` ${normalizedData.cidade}` : ''))}`,
-      `https://linkedin.com/search/results/people/?keywords=${encodeURIComponent(normalizedData.nome)}`,
-      `https://lattes.cnpq.br/buscacv?q=${encodeURIComponent(normalizedData.nome)}`
-    ];
+    // 🔍 FONTES EXPANDIDAS: Buscar em múltiplas plataformas
+    const multipleSources = await searchMultipleSources(
+      normalizedData.nome,
+      normalizedData.cidade,
+      normalizedData.username
+    );
     
-    if (normalizedData.username) {
-      rawLinks.push(`https://github.com/${normalizedData.username}`);
-      rawLinks.push(`https://instagram.com/${normalizedData.username}`);
-      rawLinks.push(`https://twitter.com/${normalizedData.username}`);
-    }
+    // Create raw links array com fontes expandidas
+    const rawLinks: string[] = multipleSources.map(source => source.url);
     
-    // Add legal search if applicable
-    if (normalizedData.cidade) {
-      const estado = normalizedData.cidade.split(' ')[0];
-      rawLinks.push(`https://consulta.tj${estado}.jus.br/pesquisa?nome=${encodeURIComponent(normalizedData.nome)}`);
-    }
+    // Adicionar fontes categorizadas aos profiles
+    multipleSources.forEach(source => {
+      if (!profiles.some(p => p.platform.includes(source.platform))) {
+        additionalProfiles.push({
+          platform: `${source.platform} (${source.category})`,
+          url: source.url,
+          description: `Busca em ${source.category.toLowerCase()} - verificação manual recomendada`,
+          relevanceScore: undefined
+        });
+      }
+    });
     
     // Add image search if applicable
     const photos: Array<{ url: string; reverseSearchResults?: any }> = [];
@@ -408,21 +498,78 @@ export async function performOSINTSearch(input: OSINTInput): Promise<OSINTResult
       personConfidence = hasRealData ? 60 : 15;
     }
     
-    // Create person profiles with REAL or LIMITED data
-    const persons: PersonProfile[] = [
-      {
-        name: results.github?.name || input.nome,
-        confidence: personConfidence,
-        location: personLocation,
-        summary: personSummary,
-        education: consolidated.educacao.length > 0 ? consolidated.educacao : [],
-        experiences: consolidated.empregos.length > 0 ? consolidated.empregos : [],
-        profiles: [
-          ...profiles,
-          ...additionalProfiles
-        ]
+    // 🔍 DETECÇÃO DE MÚLTIPLAS PESSOAS (Homônimos)
+    const persons: PersonProfile[] = [];
+    
+    // Perfil Principal (com dados verificados ou localização específica)
+    const mainProfile: PersonProfile = {
+      name: results.github?.name || input.nome,
+      confidence: personConfidence,
+      location: personLocation,
+      summary: personSummary,
+      education: consolidated.educacao.length > 0 ? consolidated.educacao : [],
+      experiences: consolidated.empregos.length > 0 ? consolidated.empregos : [],
+      profiles: [
+        ...profiles,
+        ...additionalProfiles
+      ]
+    };
+    
+    persons.push(mainProfile);
+    
+    // 👥 ADICIONAR PERFIS ALTERNATIVOS (possíveis homônimos)
+    // Só adiciona se NÃO tiver dados verificados (GitHub) e se o nome for comum
+    if (!hasRealGitHubData && normalizedData.nome.split(' ').length >= 3) {
+      // Perfil Alternativo 1: Mesma cidade, possível pessoa diferente
+      if (normalizedData.cidade) {
+        persons.push({
+          name: `${input.nome} (Homônimo - ${normalizedData.cidade})`,
+          confidence: 25,
+          location: normalizedData.cidade,
+          summary: `⚠️ POSSÍVEL HOMÔNIMO: Outra pessoa com o mesmo nome pode existir em ${normalizedData.cidade}. Verifique os links manualmente para diferenciar perfis.`,
+          education: [],
+          experiences: [],
+          profiles: [
+            {
+              platform: 'Facebook (verificação manual)',
+              url: `https://www.facebook.com/search/people/?q=${encodeURIComponent(normalizedData.nome)}`,
+              description: 'Busca por homônimos na mesma região',
+              relevanceScore: undefined
+            },
+            {
+              platform: 'Instagram (verificação manual)',
+              url: `https://www.instagram.com/explore/tags/${encodeURIComponent(normalizedData.nome.replace(/\s+/g, ''))}`,
+              description: 'Busca por hashtags relacionadas ao nome',
+              relevanceScore: undefined
+            }
+          ]
+        });
       }
-    ];
+      
+      // Perfil Alternativo 2: Outras localizações
+      persons.push({
+        name: `${input.nome} (Homônimo - Outras Localizações)`,
+        confidence: 20,
+        location: 'Diversas localizações possíveis',
+        summary: `⚠️ POSSÍVEL HOMÔNIMO: Pessoas com nome semelhante podem estar em outras cidades/estados. Recomenda-se busca manual ampliada.`,
+        education: [],
+        experiences: [],
+        profiles: [
+          {
+            platform: 'LinkedIn Nacional (verificação manual)',
+            url: `https://linkedin.com/search/results/people/?keywords=${encodeURIComponent(normalizedData.nome)}&origin=GLOBAL_SEARCH_HEADER`,
+            description: 'Busca nacional no LinkedIn - pode incluir homônimos',
+            relevanceScore: undefined
+          },
+          {
+            platform: 'Google Geral (verificação manual)',
+            url: `https://www.google.com/search?q="${encodeURIComponent(normalizedData.nome)}"`,
+            description: 'Busca ampla - analisar contexto de cada resultado',
+            relevanceScore: undefined
+          }
+        ]
+      });
+    }
     
     // Create raw data WITHOUT fictional information
     const rawData: RawData = {
