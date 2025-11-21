@@ -19,12 +19,15 @@ interface SearchResult {
 
 interface PersonProfile {
   name: string;
+  username?: string;
   confidence: number;
   profiles: SearchResult[];
   education?: string[];
   experiences?: string[];
   location?: string;
   summary?: string;
+  recentActivities?: string[];
+  sourceLinks?: string[];
 }
 
 interface OSINTResult {
@@ -37,7 +40,32 @@ interface OSINTResult {
   timestamp: string;
 }
 
-// Real OSINT search function with AI-powered analysis
+// Function to fetch and extract content from URLs
+async function fetchPageContent(url: string): Promise<string> {
+  try {
+    console.log(`Fetching content from: ${url}`);
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+      },
+      signal: AbortSignal.timeout(10000) // 10 second timeout
+    });
+    
+    if (!response.ok) {
+      console.log(`Failed to fetch ${url}: ${response.status}`);
+      return '';
+    }
+    
+    const text = await response.text();
+    // Extract only first 5000 chars to avoid token limits
+    return text.substring(0, 5000);
+  } catch (error) {
+    console.log(`Error fetching ${url}:`, error);
+    return '';
+  }
+}
+
+// Real OSINT search function with actual data extraction
 async function performOSINTSearch(
   query: string,
   city?: string,
@@ -50,161 +78,125 @@ async function performOSINTSearch(
   
   const rawLinks: string[] = [];
   const alerts: string[] = [];
-  const allProfiles: SearchResult[] = [];
+  const extractedData: { url: string; content: string; platform: string }[] = [];
 
   try {
     console.log(`Starting OSINT search for: ${query}`);
     
-    // Build comprehensive search queries
-    const searchQueries = [
-      `"${query}" ${city || ''}`,
-      `"${query}" LinkedIn`,
-      `"${query}" GitHub`,
-      `"${query}" site:linkedin.com`,
-    ];
+    // Build URLs to search
+    const urlsToFetch: { url: string; platform: string }[] = [];
 
+    // LinkedIn
+    const linkedinUrl = `https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(query)}${city ? `&location=${encodeURIComponent(city)}` : ''}`;
+    urlsToFetch.push({ url: linkedinUrl, platform: 'LinkedIn' });
+    rawLinks.push(linkedinUrl);
+
+    // GitHub
     if (username) {
-      searchQueries.push(`"${username}" ${query}`);
+      const githubProfileUrl = `https://github.com/${username}`;
+      urlsToFetch.push({ url: githubProfileUrl, platform: 'GitHub' });
+      rawLinks.push(githubProfileUrl);
     }
+    const githubSearchUrl = `https://github.com/search?q=${encodeURIComponent(query)}&type=users`;
+    urlsToFetch.push({ url: githubSearchUrl, platform: 'GitHub' });
+    rawLinks.push(githubSearchUrl);
 
     if (plan === 'complete') {
-      searchQueries.push(
-        `"${query}" Instagram`,
-        `"${query}" Twitter`,
-        `"${query}" Facebook`,
-        `"${query}" site:github.com`,
-        `"${query}" curriculum OR resume OR cv`
-      );
+      // Twitter/X
+      const twitterUrl = `https://x.com/search?q=${encodeURIComponent(query)}&lang=pt`;
+      urlsToFetch.push({ url: twitterUrl, platform: 'Twitter/X' });
+      rawLinks.push(twitterUrl);
+
+      // Instagram
+      const instagramUrl = `https://www.instagram.com/${username || query.replace(/\s+/g, '').toLowerCase()}/`;
+      urlsToFetch.push({ url: instagramUrl, platform: 'Instagram' });
+      rawLinks.push(instagramUrl);
+
+      // Lattes
+      const lattesSearchUrl = `http://buscatextual.cnpq.br/buscatextual/busca.do?metodo=apresentar&nomeCompleto=${encodeURIComponent(query)}`;
+      urlsToFetch.push({ url: lattesSearchUrl, platform: 'Lattes' });
+      rawLinks.push(lattesSearchUrl);
+
+      // JusBrasil
+      const jusBrasilUrl = `https://www.jusbrasil.com.br/busca?q=${encodeURIComponent(query)}`;
+      urlsToFetch.push({ url: jusBrasilUrl, platform: 'JusBrasil' });
+      rawLinks.push(jusBrasilUrl);
     }
 
-    // Perform web searches
-    for (const searchQuery of searchQueries) {
-      const encodedQuery = encodeURIComponent(searchQuery);
-      const googleSearchUrl = `https://www.google.com/search?q=${encodedQuery}`;
-      rawLinks.push(googleSearchUrl);
-
-      // Add platform-specific links
-      if (searchQuery.includes('LinkedIn')) {
-        const linkedinUrl = `https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(query)}${city ? `&location=${encodeURIComponent(city)}` : ''}`;
-        allProfiles.push({
-          platform: 'LinkedIn',
-          name: query,
-          url: linkedinUrl,
-          description: 'Busca de perfis profissionais',
-          relevanceScore: 85
-        });
-        rawLinks.push(linkedinUrl);
+    // Fetch content from all URLs
+    console.log(`Attempting to fetch ${urlsToFetch.length} URLs...`);
+    const fetchPromises = urlsToFetch.map(async ({ url, platform }) => {
+      const content = await fetchPageContent(url);
+      if (content) {
+        extractedData.push({ url, content, platform });
       }
+    });
+    
+    await Promise.all(fetchPromises);
+    console.log(`Successfully extracted content from ${extractedData.length} sources`);
 
-      if (searchQuery.includes('GitHub') && username) {
-        const githubProfileUrl = `https://github.com/${username}`;
-        const githubSearchUrl = `https://github.com/search?q=${encodeURIComponent(query)}&type=users`;
-        allProfiles.push({
-          platform: 'GitHub',
-          name: username,
-          url: githubProfileUrl,
-          description: 'Perfil de desenvolvedor',
-          relevanceScore: 80
-        });
-        rawLinks.push(githubProfileUrl, githubSearchUrl);
-      }
+    // Build comprehensive prompt with REAL extracted data
+    const aiAnalysisPrompt = `Você é um analisador OSINT profissional.
 
-      if (plan === 'complete') {
-        if (searchQuery.includes('Instagram')) {
-          const instagramUrl = `https://www.instagram.com/explore/tags/${encodeURIComponent(query.replace(/\s+/g, ''))}`;
-          allProfiles.push({
-            platform: 'Instagram',
-            url: instagramUrl,
-            description: 'Busca de perfis sociais',
-            relevanceScore: 70
-          });
-          rawLinks.push(instagramUrl);
-        }
+IMPORTANTE: Você deve analisar SOMENTE os dados reais extraídos abaixo. NUNCA invente informações.
 
-        if (searchQuery.includes('Twitter')) {
-          const twitterUrl = `https://twitter.com/search?q=${encodeURIComponent(query)}&src=typed_query&f=user`;
-          allProfiles.push({
-            platform: 'Twitter/X',
-            url: twitterUrl,
-            description: 'Busca de perfis sociais',
-            relevanceScore: 70
-          });
-          rawLinks.push(twitterUrl);
-        }
-      }
-      
-      // Adicionando novas buscas conforme solicitado
-      if (plan === 'complete') {
-        // Twitter/X (nova versão)
-        const newXUrl = `https://x.com/search?q=${encodeURIComponent(query)}&lang=pt`;
-        allProfiles.push({
-          platform: 'X/Twitter',
-          url: newXUrl,
-          description: 'Busca em perfis do Twitter/X',
-          relevanceScore: 75
-        });
-        rawLinks.push(newXUrl);
-
-        // Lattes
-        const lattesUrl = `https://lattes.cnpq.br/`;
-        allProfiles.push({
-          platform: 'Lattes',
-          url: lattesUrl,
-          description: 'Currículo Lattes - Plataforma brasileira de currículos',
-          relevanceScore: 80
-        });
-        rawLinks.push(lattesUrl);
-
-        // Serasa
-        const serasaUrl = `https://empresas.serasaexperian.com.br/busca-empresa/${encodeURIComponent(query)}`;
-        allProfiles.push({
-          platform: 'Serasa',
-          url: serasaUrl,
-          description: 'Consulta empresarial no Serasa Experian',
-          relevanceScore: 65
-        });
-        rawLinks.push(serasaUrl);
-
-        // JusBrasil
-        const jusBrasilUrl = `https://www.jusbrasil.com.br/busca?q=${encodeURIComponent(query)}`;
-        allProfiles.push({
-          platform: 'JusBrasil',
-          url: jusBrasilUrl,
-          description: 'Busca em documentos jurídicos e processos',
-          relevanceScore: 70
-        });
-        rawLinks.push(jusBrasilUrl);
-      }
-    }
-
-    // Use Lovable AI to analyze and consolidate results
-    const aiAnalysisPrompt = `Você é um assistente especializado em OSINT (Open Source Intelligence). Analise os seguintes dados de busca e identifique possíveis perfis distintos de pessoas com o nome "${query}"${city ? ` na região de ${city}` : ''}.
-
-Dados coletados:
-- Total de links encontrados: ${rawLinks.length}
-- Plataformas pesquisadas: ${[...new Set(allProfiles.map(p => p.platform))].join(', ')}
+📋 DADOS DA PESQUISA:
+- Nome pesquisado: "${query}"
+${city ? `- Cidade: ${city}` : ''}
 ${username ? `- Username fornecido: ${username}` : ''}
+- Total de referências: ${rawLinks.length}
+- Fontes com conteúdo extraído: ${extractedData.length}
 
-Com base nessas informações, forneça uma análise estruturada em JSON com o seguinte formato:
+🌐 CONTEÚDO EXTRAÍDO DAS PÁGINAS:
+${extractedData.map((data, idx) => `
+[${idx + 1}] Plataforma: ${data.platform}
+URL: ${data.url}
+Conteúdo extraído:
+${data.content}
+---
+`).join('\n')}
+
+${extractedData.length === 0 ? '⚠️ ATENÇÃO: Nenhum conteúdo foi extraído das páginas. As plataformas podem estar bloqueando scraping ou as páginas não existem.' : ''}
+
+🎯 SUA TAREFA:
+1. ACESSAR cada conteúdo extraído acima
+2. SEPARAR pessoas diferentes com o mesmo nome (se houver)
+3. AGRUPAR dados da mesma pessoa de diferentes plataformas
+4. ELIMINAR informações não verificadas
+5. GERAR relatório SOMENTE com dados reais
+
+📊 FORMATO DE RESPOSTA (JSON):
 {
   "persons": [
     {
-      "name": "Nome completo identificado",
-      "confidence": 85,
-      "location": "Cidade/País se identificado",
-      "summary": "Resumo breve da pessoa (profissão, área de atuação)",
-      "education": ["Educação identificada"],
-      "experiences": ["Experiências profissionais"],
-      "socialProfiles": ["URLs de perfis sociais encontrados"]
+      "name": "Nome completo (use o nome pesquisado se não encontrar outro)",
+      "username": "username encontrado ou null",
+      "confidence": 0-100,
+      "location": "localização real encontrada ou 'Não identificado'",
+      "summary": "resumo baseado SOMENTE em informações extraídas ou 'Informações insuficientes'",
+      "education": ["formação REAL encontrada"] ou [],
+      "experiences": ["experiência REAL encontrada"] ou [],
+      "socialProfiles": ["URLs dos perfis encontrados"],
+      "recentActivities": ["atividades recentes encontradas"] ou [],
+      "sourceLinks": ["URLs de onde os dados foram extraídos"]
     }
   ],
-  "alerts": ["Alertas relevantes como perfis recentes, inconsistências, etc."],
-  "generalSummary": "Resumo geral da busca"
+  "alerts": [
+    "Alertas sobre qualidade dos dados, perfis duplicados, informações conflitantes, etc."
+  ],
+  "generalSummary": "Resumo do que foi encontrado e o que NÃO foi encontrado"
 }
 
-IMPORTANTE: Se não houver informações suficientes, use placeholders realistas mas indique baixa confiança. Considere que pode haver múltiplas pessoas com o mesmo nome.`;
+🚫 REGRAS CRÍTICAS:
+- Se não encontrou dados em um link, escreva "Sem informações relevantes" no alert
+- Se não conseguiu diferenciar perfis, indique baixa confiança
+- NUNCA invente formação acadêmica, empregos, ou registros
+- Se um campo não tem dados, use array vazio [] ou "Não identificado"
+- Seja HONESTO sobre limitações da extração
 
-    console.log('Requesting AI analysis...');
+Agora analise os dados extraídos e retorne o JSON estruturado.`;
+
+    console.log('Requesting AI analysis with real extracted data...');
     
     const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
@@ -217,86 +209,116 @@ IMPORTANTE: Se não houver informações suficientes, use placeholders realistas
         messages: [
           {
             role: 'system',
-            content: 'Você é um especialista em OSINT e análise de dados públicos. Forneça análises precisas e estruturadas em JSON.'
+            content: 'Você é um especialista em OSINT. Analise SOMENTE dados reais extraídos. NUNCA invente informações. Seja honesto sobre limitações.'
           },
           {
             role: 'user',
             content: aiAnalysisPrompt
           }
         ],
-        temperature: 0.3,
-        max_tokens: 2000
+        temperature: 0.2,
+        max_tokens: 4000
       })
     });
 
     if (!aiResponse.ok) {
-      console.error('AI API error:', await aiResponse.text());
-      throw new Error('Failed to analyze data with AI');
+      const errorText = await aiResponse.text();
+      console.error('AI API error:', aiResponse.status, errorText);
+      throw new Error(`Failed to analyze data with AI: ${errorText}`);
     }
 
     const aiData = await aiResponse.json();
     const aiContent = aiData.choices[0].message.content;
     
-    console.log('AI Analysis received:', aiContent);
+    console.log('AI Analysis received');
 
     // Parse AI response
     let analysisResult;
     try {
-      // Extract JSON from markdown code blocks if present
       const jsonMatch = aiContent.match(/```json\s*([\s\S]*?)\s*```/) || aiContent.match(/```\s*([\s\S]*?)\s*```/);
       const jsonStr = jsonMatch ? jsonMatch[1] : aiContent;
       analysisResult = JSON.parse(jsonStr);
     } catch (parseError) {
       console.error('Failed to parse AI response:', parseError);
-      // Fallback to basic structure
+      
+      // Fallback: create minimal structure with extracted data
+      const extractionSummary = extractedData.length > 0 
+        ? `Dados extraídos de ${extractedData.length} fonte(s): ${extractedData.map(d => d.platform).join(', ')}`
+        : 'Nenhum conteúdo foi extraído das páginas (possível bloqueio de scraping)';
+      
       analysisResult = {
         persons: [{
           name: query,
-          confidence: 60,
-          location: city || 'Não especificado',
-          summary: 'Análise em andamento',
+          username: username || null,
+          confidence: extractedData.length > 0 ? 40 : 20,
+          location: city || 'Não identificado',
+          summary: 'Análise limitada - ' + extractionSummary,
           education: [],
           experiences: [],
-          socialProfiles: rawLinks.slice(0, 5)
+          socialProfiles: rawLinks.slice(0, 5),
+          recentActivities: [],
+          sourceLinks: extractedData.map(d => d.url)
         }],
-        alerts: ['Análise automática em processamento'],
-        generalSummary: `Busca realizada para "${query}". ${allProfiles.length} perfis encontrados em ${[...new Set(allProfiles.map(p => p.platform))].length} plataformas.`
+        alerts: [
+          'Análise automática com dados limitados',
+          extractedData.length === 0 ? 'Nenhum conteúdo extraído - plataformas podem estar bloqueando acesso' : `${extractedData.length} fonte(s) analisada(s)`
+        ],
+        generalSummary: extractionSummary
       };
     }
 
     // Map AI analysis to PersonProfile structure
     const persons: PersonProfile[] = analysisResult.persons.map((person: any) => ({
-      name: person.name,
-      confidence: person.confidence,
-      location: person.location,
-      summary: person.summary,
+      name: person.name || query,
+      username: person.username,
+      confidence: person.confidence || 50,
+      location: person.location || city || 'Não identificado',
+      summary: person.summary || 'Informações insuficientes',
       education: person.education || [],
       experiences: person.experiences || [],
-      profiles: allProfiles.filter(p => 
-        person.socialProfiles?.some((url: string) => p.url.includes(url.split('/')[2]))
-      )
+      profiles: (person.socialProfiles || []).map((url: string) => ({
+        platform: extractedData.find(d => d.url === url)?.platform || 'Desconhecido',
+        url,
+        name: person.name || query,
+        description: 'Perfil identificado'
+      }))
     }));
 
     // If no persons identified, create default one
     if (persons.length === 0) {
       persons.push({
         name: query,
-        confidence: 70,
+        username: username,
+        confidence: 30,
         location: city || 'Não especificado',
-        summary: 'Perfil identificado através de busca em plataformas públicas',
-        profiles: allProfiles,
+        summary: extractedData.length > 0 
+          ? `${extractedData.length} referência(s) encontrada(s) mas dados insuficientes para análise detalhada`
+          : 'Nenhum dado público encontrado nas plataformas pesquisadas',
+        profiles: rawLinks.slice(0, 5).map(url => ({
+          platform: 'Referência',
+          url,
+          name: query
+        })),
         education: [],
         experiences: []
       });
     }
 
     alerts.push(...(analysisResult.alerts || []));
+    
+    // Add alert about extraction success
+    if (extractedData.length === 0) {
+      alerts.push('⚠️ Nenhum conteúdo foi extraído das páginas. As plataformas podem estar bloqueando scraping automático.');
+    } else {
+      alerts.push(`✓ ${extractedData.length} fonte(s) analisada(s) com sucesso`);
+    }
 
-    const summary = analysisResult.generalSummary || `Análise OSINT completa. ${persons.length} perfil(is) identificado(s) com base em ${allProfiles.length} referências.`;
+    const summary = analysisResult.generalSummary || 
+      `Análise OSINT para "${query}". ${persons.length} perfil(is) identificado(s) com base em ${extractedData.length} fonte(s) acessada(s) de ${rawLinks.length} referências totais.`;
 
     return {
       summary,
-      totalProfilesFound: allProfiles.length,
+      totalProfilesFound: extractedData.length,
       persons,
       rawLinks: [...new Set(rawLinks)],
       alerts,
