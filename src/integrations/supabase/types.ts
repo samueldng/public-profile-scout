@@ -56,6 +56,7 @@ export type Database = {
           created_at: string
           error_message: string | null
           id: string
+          image_url: string | null
           plan: Database["public"]["Enums"]["search_plan"]
           query: string
           result_data: Json | null
@@ -69,6 +70,7 @@ export type Database = {
           created_at?: string
           error_message?: string | null
           id?: string
+          image_url?: string | null
           plan: Database["public"]["Enums"]["search_plan"]
           query: string
           result_data?: Json | null
@@ -82,6 +84,7 @@ export type Database = {
           created_at?: string
           error_message?: string | null
           id?: string
+          image_url?: string | null
           plan?: Database["public"]["Enums"]["search_plan"]
           query?: string
           result_data?: Json | null
