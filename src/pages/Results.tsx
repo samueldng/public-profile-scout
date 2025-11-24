@@ -5,8 +5,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, ArrowLeft, MapPin, Mail, Phone, ExternalLink, AlertTriangle, CheckCircle, Info } from 'lucide-react';
+import { Loader2, ArrowLeft, MapPin, Mail, Phone, ExternalLink, AlertTriangle, CheckCircle, Info, Download } from 'lucide-react';
 import { Header } from '@/components/Header';
+import { generatePDFReport } from '@/utils/pdfGenerator';
+import { toast } from 'sonner';
 
 interface SearchResult {
   platform: string;
@@ -152,6 +154,22 @@ const Results = () => {
     });
   };
 
+  const handleExportPDF = () => {
+    if (!results) return;
+    
+    try {
+      generatePDFReport(results);
+      toast.success('Relatório PDF gerado com sucesso!', {
+        description: 'O arquivo foi baixado para sua pasta de downloads'
+      });
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      toast.error('Erro ao gerar PDF', {
+        description: 'Ocorreu um erro ao gerar o relatório. Tente novamente.'
+      });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
@@ -161,14 +179,23 @@ const Results = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          <Button 
-            variant="ghost" 
-            onClick={() => navigate('/search')}
-            className="mb-6"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Nova Pesquisa
-          </Button>
+          <div className="flex items-center justify-between mb-6">
+            <Button 
+              variant="ghost" 
+              onClick={() => navigate('/search')}
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Nova Pesquisa
+            </Button>
+            
+            <Button 
+              onClick={handleExportPDF}
+              className="bg-gradient-to-r from-primary to-secondary hover:opacity-90 transition-opacity"
+            >
+              <Download className="w-4 h-4 mr-2" />
+              Exportar PDF
+            </Button>
+          </div>
 
           {/* Header */}
           <Card className="p-8 mb-6 glass">
