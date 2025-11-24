@@ -79,15 +79,31 @@ export const SearchForm = ({ selectedPlan = 'basic' }: SearchFormProps) => {
     setLoading(true);
 
     try {
-      // Convert image to base64 if provided
-      let imageData: string | null = null;
+      let imageUrl: string | null = null;
       
-      if (imageFile) {
-        imageData = await new Promise((resolve) => {
-          const reader = new FileReader();
-          reader.onloadend = () => resolve(reader.result as string);
-          reader.readAsDataURL(imageFile);
-        });
+      // Upload image to Supabase storage if provided
+      if (imageFile && selectedPlan === 'complete') {
+        const fileExt = imageFile.name.split('.').pop();
+        const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+        const filePath = `${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('osint-images')
+          .upload(filePath, imageFile);
+
+        if (uploadError) {
+          console.error('Error uploading image:', uploadError);
+          toast({
+            title: 'Aviso',
+            description: 'Erro ao fazer upload da imagem. Continuando sem busca reversa.',
+            variant: 'default',
+          });
+        } else {
+          const { data: urlData } = supabase.storage
+            .from('osint-images')
+            .getPublicUrl(filePath);
+          imageUrl = urlData.publicUrl;
+        }
       }
 
       // Create search job directly in database
@@ -99,6 +115,7 @@ export const SearchForm = ({ selectedPlan = 'basic' }: SearchFormProps) => {
           username: formData.username?.trim() || null,
           plan: selectedPlan,
           status: 'pending',
+          image_url: imageUrl,
         })
         .select()
         .single();

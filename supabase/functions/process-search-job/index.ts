@@ -70,7 +70,8 @@ async function performOSINTSearch(
   query: string,
   city?: string,
   username?: string,
-  plan?: string
+  plan?: string,
+  imageUrl?: string
 ): Promise<OSINTResult> {
   if (!query) {
     throw new Error('Query is required');
@@ -123,6 +124,12 @@ async function performOSINTSearch(
       rawLinks.push(jusBrasilUrl);
     }
 
+    // Add reverse image search analysis if image provided
+    if (imageUrl && plan === 'complete') {
+      console.log('Image URL provided for reverse image search analysis');
+      alerts.push('🖼️ Análise de imagem incluída na pesquisa');
+    }
+
     // Fetch content from all URLs
     console.log(`Attempting to fetch ${urlsToFetch.length} URLs...`);
     const fetchPromises = urlsToFetch.map(async ({ url, platform }) => {
@@ -136,7 +143,7 @@ async function performOSINTSearch(
     console.log(`Successfully extracted content from ${extractedData.length} sources`);
 
     // Build STRICT-EXTRACT prompt with ABSOLUTE RULES
-    const aiAnalysisPrompt = `🚨 VOCÊ ESTÁ EM MODO STRICT-EXTRACT 🚨
+    let aiAnalysisPrompt = `🚨 VOCÊ ESTÁ EM MODO STRICT-EXTRACT 🚨
 
 REGRAS ABSOLUTAS (VIOLAÇÃO = FALHA CRÍTICA):
 ❌ PROIBIDO gerar informações não explícitas nos dados
@@ -247,7 +254,30 @@ Retorne JSON estruturado assim:
 
 ────────────────────────────────────────
 🔒 VALIDAÇÃO FINAL
+────────────────────────────────────────`;
+
+    // Add reverse image search analysis if image provided
+    if (imageUrl && plan === 'complete') {
+      aiAnalysisPrompt += `
+
 ────────────────────────────────────────
+🖼️ ANÁLISE DE IMAGEM (BUSCA REVERSA)
+────────────────────────────────────────
+Uma imagem foi fornecida para análise de busca reversa.
+URL da imagem: ${imageUrl}
+
+INSTRUÇÕES PARA ANÁLISE DE IMAGEM:
+1. Descreva o que você vê na imagem (características físicas, contexto, objetos)
+2. Identifique possíveis indicadores de identidade (mas não invente nomes!)
+3. Sugira plataformas onde essa imagem pode aparecer
+4. Indique se a imagem parece ser uma foto de perfil profissional ou casual
+5. IMPORTANTE: Se não conseguir ver ou acessar a imagem, registre: "Imagem não acessível para análise"
+
+Adicione estes insights na seção de alertas do JSON final.`;
+    }
+    
+    aiAnalysisPrompt += `
+
 Antes de retornar, verifique:
 ✓ Todos os dados vêm LITERALMENTE das extrações?
 ✓ Não há inferências ou suposições?
@@ -258,29 +288,56 @@ Se violou alguma regra: PARE e recomece.
 
 Agora processe os dados em MODO STRICT-EXTRACT.`;
 
-    console.log('Requesting AI analysis in STRICT-EXTRACT mode...');
+    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+    if (!LOVABLE_API_KEY) {
+      throw new Error('LOVABLE_API_KEY not configured');
+    }
+
+    console.log('Sending data to AI for STRICT-EXTRACT analysis...');
     
+    // Build messages for AI with image support if available
+    const messages: any[] = [
+      {
+        role: 'system',
+        content: 'Você é um analisador OSINT profissional operando em MODO STRICT-EXTRACT. Você NUNCA inventa informações. Você SOMENTE extrai dados explicitamente presentes nas fontes fornecidas.'
+      }
+    ];
+
+    // If image is provided, include it in the analysis
+    if (imageUrl && plan === 'complete') {
+      messages.push({
+        role: 'user',
+        content: [
+          {
+            type: 'text',
+            text: aiAnalysisPrompt
+          },
+          {
+            type: 'image_url',
+            image_url: {
+              url: imageUrl
+            }
+          }
+        ]
+      });
+    } else {
+      messages.push({
+        role: 'user',
+        content: aiAnalysisPrompt
+      });
+    }
+
     const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
       headers: {
+        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${Deno.env.get('LOVABLE_API_KEY')}`,
       },
       body: JSON.stringify({
         model: 'google/gemini-2.5-flash',
-        messages: [
-          {
-            role: 'system',
-            content: '🚨 MODO STRICT-EXTRACT ATIVADO. Você é um extrator OSINT que NUNCA inventa dados. PROIBIDO inferir, sugerir ou complementar informações. APENAS copie literalmente o que existir nos dados fornecidos.'
-          },
-          {
-            role: 'user',
-            content: aiAnalysisPrompt
-          }
-        ],
-        temperature: 0.1, // Very low temperature for strict extraction
-        max_tokens: 6000
-      })
+        messages,
+        temperature: 0.1, // Very low temperature for deterministic extraction
+      }),
     });
 
     if (!aiResponse.ok) {
@@ -552,7 +609,8 @@ serve(async (req) => {
         job.query,
         job.city,
         job.username,
-        job.plan
+        job.plan,
+        job.image_url
       );
 
       // Update job with results
